@@ -646,6 +646,16 @@ namespace Terrarium.Game
             // has not been loaded yet.  This would fail without the assertion.
             var permission = new FileIOPermission(PermissionState.Unrestricted);
             permission.Assert();
+
+            // Since .NET 4 this event is also raised for satellite resource
+            // assemblies (Controls.resources and the like) and generated
+            // serializers.  Returning null lets the runtime fall back as usual
+            // instead of failing on a file the cache never had.
+            if (!File.Exists(GetFileName(args.Name)))
+            {
+                return null;
+            }
+
             return LoadOrganismAssembly(args.Name);
         }
 
