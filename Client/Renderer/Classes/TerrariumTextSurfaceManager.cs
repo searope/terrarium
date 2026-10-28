@@ -6,8 +6,8 @@ using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Drawing;
-using DxVBLib;
 using Terrarium.Renderer.DirectX;
+using Vortice.DirectWrite;
 
 namespace Terrarium.Renderer
 {
@@ -29,6 +29,11 @@ namespace Terrarium.Renderer
         ///  The sprites associated with each bit of text.
         /// </summary>
         private Hashtable sprites;
+
+        /// <summary>
+        ///  The font organism names are drawn in.
+        /// </summary>
+        private IDWriteTextFormat font;
 
         /// <summary>
         ///  Initialize the standard font rectangle.
@@ -96,16 +101,10 @@ namespace Terrarium.Renderer
                 return;
             }
 
-            // Set up the surface
+            // Set up the surface, transparent apart from the text
             var rect = new RECT();
-            var ddSurface = new DirectDrawSurface(StandardFontRect.Right, StandardFontRect.Bottom)
-                                {
-                                    TransparencyKey = DirectDrawSurface.MagentaColorKey
-                                };
-
-            // Color in the back and add the text
-            ddSurface.Surface.BltColorFill(ref rect, DirectDrawSurface.MagentaColorKey.low);
-            ddSurface.Surface.SetForeColor(0);
+            var ddSurface = new DirectDrawSurface(StandardFontRect.Right, StandardFontRect.Bottom);
+            ddSurface.ColorFill(rect, Color.Transparent);
 
             var text = key;
             if (text.Length > 16)
@@ -114,20 +113,17 @@ namespace Terrarium.Renderer
                 text += "...";
             }
 
-            var dcHandle = new IntPtr(ddSurface.Surface.GetDC());
+            if (font == null)
+            {
+                font = ManagedDirectX.CreateTextFormat("Verdana", 6.75f, false);
+                font.WordWrapping = WordWrapping.NoWrap;
+            }
 
-            var graphics = Graphics.FromHdc(dcHandle);
-
-            var font = new Font("Verdana", 6.75f, FontStyle.Regular);
-
-            graphics.DrawString(text, font, Brushes.Black, 1, 1);
-            graphics.DrawString(text, font, Brushes.WhiteSmoke, 0, 0);
-
-            font.Dispose();
-
-            graphics.Dispose();
-
-            ddSurface.Surface.ReleaseDC(dcHandle.ToInt32());
+            // Draw a drop shadow, then the text over it
+            var layout = new RectangleF(1, 1, StandardFontRect.Right, StandardFontRect.Bottom);
+            ddSurface.DrawText(text, font, layout, Color.Black);
+            layout.Offset(-1, -1);
+            ddSurface.DrawText(text, font, layout, Color.WhiteSmoke);
 
             sprites.Add(key, ddSurface);
         }
@@ -138,6 +134,14 @@ namespace Terrarium.Renderer
         /// </summary>
         internal void Clear()
         {
+            if (sprites != null)
+            {
+                foreach (DirectDrawSurface ddSurface in sprites.Values)
+                {
+                    ddSurface.Dispose();
+                }
+            }
+
             sprites = CollectionsUtil.CreateCaseInsensitiveHashtable();
         }
 

@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="Current">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
@@ -24,19 +24,17 @@
     </FileUpgradeFlags>
     <AssemblyOriginatorKeyMode>File</AssemblyOriginatorKeyMode>
     <SignAssembly>true</SignAssembly>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
     <IsWebBootstrapper>true</IsWebBootstrapper>
     <FallbackCulture>en-US</FallbackCulture>
     <UpdateUrlEnabled>false</UpdateUrlEnabled>
     <WebPageEnabled>true</WebPageEnabled>
-    <SignManifests>true</SignManifests>
-    <ManifestCertificateThumbprint>EC13F3640926A078D6C271D9EE6E18AF1E387164</ManifestCertificateThumbprint>
-    <ManifestKeyFile>Terrarium_TemporaryKey.pfx</ManifestKeyFile>
+    <SignManifests>false</SignManifests>
     <TargetZone>LocalIntranet</TargetZone>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <PublishUrl>C:\Inetpub\wwwroot\Terrarium\Publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
@@ -128,10 +126,6 @@
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DXVBLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0271974b642e7a95">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\DXVBLib\DXVBLib.dll</HintPath>
-    </Reference>
     <Reference Include="System">
       <Name>System</Name>
       <HintPath>..\..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.dll</HintPath>

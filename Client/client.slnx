@@ -1,0 +1,15 @@
+<Solution>
+  <Project Path="Terrarium/terrarium.csproj" />
+  <Project Path="Configuration/Configuration.csproj" />
+  <Project Path="Controls/Controls.csproj" />
+  <Project Path="Controls2/Controls2.csproj" />
+  <Project Path="ControlsWPF/ControlsWPF.csproj" />
+  <Project Path="Game/Game.csproj" />
+  <Project Path="Glass/Glass.csproj" />
+  <Project Path="HttpListener/HttpListener.csproj" />
+  <Project Path="OrganismBase/OrganismBase.csproj" />
+  <Project Path="Renderer/Renderer.csproj" />
+  <Project Path="Services/Services.csproj" />
+  <Project Path="Terrarium2/Terrarium2.csproj" />
+  <Project Path="TerrariumWPF/TerrariumWPF.csproj" />
+</Solution>

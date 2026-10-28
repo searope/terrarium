@@ -13,3 +13,11 @@ packages/
 
 # Test results
 TestResults/
+
+# XML docs the Client build writes into project folders
+Client/Configuration/Configuration.xml
+Client/Controls/Controls.xml
+Client/Game/Game.xml
+Client/OrganismBase/OrganismBase.xml
+Client/Renderer/Renderer.xml
+Client/Terrarium/Terrarium.xml

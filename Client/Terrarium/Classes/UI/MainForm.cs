@@ -28,8 +28,7 @@ using Terrarium.Hosting;
 using Terrarium.Glass;
 using Terrarium.PeerToPeer;
 using Terrarium.Renderer;
-//using Terrarium.Renderer.DirectX;
-using DxVBLib;
+using Terrarium.Renderer.DirectX;
 using Terrarium.Tools;
 using Terrarium.Services.Species;
 

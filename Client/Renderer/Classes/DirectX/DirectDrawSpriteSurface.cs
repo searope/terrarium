@@ -4,7 +4,6 @@
 
 
 using System;
-using DxVBLib;
 
 namespace Terrarium.Renderer.DirectX
 {
@@ -62,12 +61,8 @@ namespace Terrarium.Renderer.DirectX
 #endif
             this.spriteName = spriteName;
 
+            // Loading the image turns its magenta color key into transparency
             ddsurface = new DirectDrawSurface(spriteImagePath);
-            if (ddsurface == null)
-            {
-                ddsurface = new DirectDrawSurface(spriteImagePath, DirectDrawSurface.SystemMemorySurfaceDescription);
-            }
-            ddsurface.TransparencyKey = DirectDrawSurface.DefaultColorKey;
 
             animationFrames = xFrames;
             animationTypes = yFrames;

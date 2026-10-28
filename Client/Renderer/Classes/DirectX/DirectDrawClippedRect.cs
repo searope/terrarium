@@ -2,8 +2,6 @@
 //      Copyright (c) Microsoft Corporation.  All rights reserved.                                                             
 //------------------------------------------------------------------------------
 
-using DxVBLib;
-
 namespace Terrarium.Renderer.DirectX 
 {
     /// <summary>

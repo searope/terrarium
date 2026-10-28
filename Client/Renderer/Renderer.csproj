@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="Current">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
@@ -28,7 +28,9 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <!-- Vortice's dependencies use source generators that need C# 8 or later -->
+    <LangVersion>latest</LangVersion>
     <PublishUrl>http://localhost/Renderer/</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
@@ -110,10 +112,6 @@
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DxVBLib">
-      <Name>DxVBLib</Name>
-      <HintPath>..\DXVBLib\DxVBLib.DLL</HintPath>
-    </Reference>
     <Reference Include="System">
       <Name>System</Name>
       <HintPath>..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.0.3705\System.dll</HintPath>
@@ -154,6 +152,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Vortice.Direct2D1" Version="2.4.2" />
+    <PackageReference Include="Vortice.Direct3D11" Version="2.4.2" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\VersionInfo.cs">
       <Link>VersionInfo.cs</Link>
       <SubType>Code</SubType>
@@ -176,6 +178,7 @@
     <Compile Include="Classes\DirectX\DirectXException.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Classes\DirectX\RECT.cs" />
     <Compile Include="Classes\DirectX\ManagedDirectX.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -144,10 +144,6 @@ namespace Terrarium.Game
 
             _pac = new PrivateAssemblyCache(dataPath, fileName, true, trackLastRun);
 
-            // Reset the appdomain policy since we changed the location of the organism dlls
-            // This must be done before any animals are loaded in any way.  Make sure this call stays
-            // as soon as possible
-            AppDomain.CurrentDomain.SetAppDomainPolicy(SecurityUtils.MakePolicyLevel(_pac.AssemblyDirectory));
 
             _usingNetwork = useNetwork;
             _populationData = new PopulationData(reportData, leds[(int) LedIndicators.ReportWebService]);
