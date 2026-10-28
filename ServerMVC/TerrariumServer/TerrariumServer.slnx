@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../TerrariumServer.Tests/TerrariumServer.Tests.csproj" />
+  <Project Path="TerrariumServer.csproj" />
+</Solution>

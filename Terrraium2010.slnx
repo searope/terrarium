@@ -1,0 +1,54 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="Mixed Platforms" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Client/">
+    <Project Path="ClientWPF/AsmCheck/AsmCheck.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Configuration/Configuration.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Controls/Controls.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/DXVBLib/DXVBLib.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Game/Game.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Glass/Glass.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Graphics/Graphics.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/HttpListener/HttpListener.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/OrganismBase/OrganismBase.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Renderer/Renderer.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/Services/Services.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ClientWPF/TerrariumClient/TerrariumClient.csproj">
+      <Platform Project="x86" />
+      <Build Solution="*|Any CPU" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Server/">
+    <Project Path="ServerMVC/TerrariumServer.Tests/TerrariumServer.Tests.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="ServerMVC/TerrariumServer/TerrariumServer.csproj">
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+  </Folder>
+</Solution>
