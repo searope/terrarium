@@ -8,6 +8,44 @@ The Windows SDK team evolved the game in the .NET Framework 2.0 timeframe, but w
 
 In Terrarium, you can create herbivores, carnivores, or plants and then introduce them into a peer-to-peer, networked ecosystem where they complete for survival. Terrarium demonstrates some of the features of the .NET Framework, including Windows Forms integration with DirectX®; XML Web services; support for peer-to-peer networking; support for multiple programming languages; the capability to update smart client, or Windows-based, applications via a remote Web server; and the evidence-based and code access security infrastructure. 
 
+## Visual Studio 2026 upgrade notes
+
+This fork has been upgraded to build and run with Visual Studio 2026 on Windows 11. The original README is kept as [README.md.original](README.md.original).
+
+### Running the game
+
+You need:
+
+* Visual Studio 2026 with the **.NET desktop development** workload, which includes the .NET Framework 4.8 targeting pack.
+* Internet access on the first build, so NuGet can download the graphics libraries.
+* A GPU with Direct3D 10 or later. Without one, the game falls back to the Windows software renderer (WARP).
+
+No DirectX SDK or runtime installer is needed.
+
+To run it, open `Client\client.slnx` and press F5 with the default **Debug | Any CPU** configuration. **Terrarium** is the startup project, and the game builds to `Client\Terrarium\bin\Debug\Terrarium.exe`.
+
+### What changed
+
+The game client (`Client\client.slnx`):
+
+* All 13 projects now target .NET Framework 4.8 instead of 3.5, and the VS 2008 `client.sln` is replaced by `client.slnx`.
+* The renderer used DirectX 7 through `DXVBLib.dll`, which wraps `dx7vb.dll`, a library Windows no longer includes. It has been rewritten on Direct2D, DirectWrite and Direct3D 11, through [Vortice](https://github.com/amerkoleci/Vortice.Windows) 2.4.2, the last release that supports .NET Framework. The game view draws to a DXGI flip-model swap chain, and the magenta color key in the sprite sheets becomes real transparency when they load. `DXVBLib.dll` has been removed.
+* DirectDraw's exclusive full-screen mode is gone, so the game always runs in a window.
+* ClickOnce manifest signing is turned off, because it needed the old password-protected `Terrarium_TemporaryKey.pfx`.
+* The code access security (CAS) policy is removed. .NET Framework 4 and later reject `AppDomain.SetAppDomainPolicy`, and the call stopped the game from starting.
+
+The main solution, `Terrraium2010.slnx`, which holds the WPF client and the ASP.NET MVC server:
+
+* All projects target .NET Framework 4.8, and the solution files are migrated from `.sln` to `.slnx`.
+* The server moved from ASP.NET MVC 2 to MVC 5.2.9, and its tests from the VS 2010 test framework to MSTest 3.
+* These two projects are only starting templates. The WPF client opens an empty window and the server is the stock MVC sample site, so the playable game is the one in `Client`.
+
+### Known limitations
+
+* **Creatures run with full trust.** The removed CAS policy was what limited creature assemblies to execute-only permissions. Creature code now runs with the same access to your computer as the game itself, so only load creatures you trust. Restoring a real sandbox would mean loading creatures in a restricted AppDomain.
+* **There is no ecosystem server.** `www.terrariumserver.com` no longer exists, so ecosystem and peer-to-peer modes can't connect, and the game shows a message saying so. Local Terrarium mode works.
+* **Not converted yet:** the creature samples (`Samples\Samples.sln`), the SDK solutions (`SDK\Solutions`), the original web server (`Server\server.sln`) and the setup projects (`.vdproj`). They still use their VS 2005 formats, and VS 2026 doesn't open setup projects or the old C++ `AsmCheck` project at all.
+
 ## Game Overview
 
 The game can run in two modes:
