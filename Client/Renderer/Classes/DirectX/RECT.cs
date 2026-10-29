@@ -2,7 +2,7 @@
 //      Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
-using System.Drawing;
+using Vortice.Mathematics;
 
 namespace Terrarium.Renderer.DirectX
 {
@@ -41,9 +41,9 @@ namespace Terrarium.Renderer.DirectX
             get { return Right <= Left || Bottom <= Top; }
         }
 
-        internal RectangleF ToRectangleF()
+        internal Rect ToRect()
         {
-            return RectangleF.FromLTRB(Left, Top, Right, Bottom);
+            return Rect.FromLTRB(Left, Top, Right, Bottom);
         }
     }
 }

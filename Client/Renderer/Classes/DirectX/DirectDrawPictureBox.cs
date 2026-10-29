@@ -55,8 +55,8 @@ namespace Terrarium.Renderer.DirectX
             ReleaseScreenSurface();
 
             var description = new SwapChainDescription1(
-                Math.Max(1, ClientSize.Width),
-                Math.Max(1, ClientSize.Height),
+                (uint) Math.Max(1, ClientSize.Width),
+                (uint) Math.Max(1, ClientSize.Height),
                 Format.B8G8R8A8_UNorm,
                 false,
                 Usage.RenderTargetOutput,

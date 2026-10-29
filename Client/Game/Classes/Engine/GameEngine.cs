@@ -801,27 +801,18 @@ namespace Terrarium.Game
                 File.Delete(reportPath);
             }
 
-            byte[] asm;
-            using (FileStream sourceStream = File.OpenRead(assemblyPath))
+            if (new FileInfo(assemblyPath).Length > (100*1024))
             {
-                if (sourceStream.Length > (100*1024))
-                {
-                    throw new GameEngineException(
-                        "Your organism is greater than 100k in size.  Please try to reduce the size of your assembly.");
-                }
-                asm = new byte[sourceStream.Length];
-                sourceStream.Read(asm, 0, (int) sourceStream.Length);
+                throw new GameEngineException(
+                    "Your organism is greater than 100k in size.  Please try to reduce the size of your assembly.");
             }
+            byte[] asm = File.ReadAllBytes(assemblyPath);
 
             // Load the debugging information if it exists
             byte[] asmSymbols = null;
             if (File.Exists(Path.ChangeExtension(assemblyPath, ".pdb")))
             {
-                using (FileStream sourceStream = File.OpenRead(Path.ChangeExtension(assemblyPath, ".pdb")))
-                {
-                    asmSymbols = new byte[sourceStream.Length];
-                    sourceStream.Read(asmSymbols, 0, (int) sourceStream.Length);
-                }
+                asmSymbols = File.ReadAllBytes(Path.ChangeExtension(assemblyPath, ".pdb"));
             }
 
             // Actually load the assembly from the bytes

@@ -289,7 +289,7 @@ namespace Terrarium.Client
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Terrarium";
-            this.Closing += new System.ComponentModel.CancelEventHandler(this.Form_Closing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_Closing);
             this.SystemColorsChanged += new System.EventHandler(this.MainForm_SystemColorsChanged);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form_KeyUp);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
@@ -304,11 +304,11 @@ namespace Terrarium.Client
 		[STAThread()]
 		internal static int Main(string[] args)
 		{
-#if DEBUG_CLICKONCE
-			MessageBox.Show("Click OK to continue", "Click-Once Debugging", MessageBoxButtons.OK, MessageBoxIcon.Information);
-#endif
-
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+
+			// The forms were laid out for the .NET Framework default font; modern
+			// .NET defaults to Segoe UI 9pt, which would scale every form up
+			Application.SetDefaultFont(new Font(new FontFamily("Microsoft Sans Serif"), 8.25f));
 
 			// Turn on XP Themes...
 			Application.EnableVisualStyles();
@@ -420,10 +420,10 @@ namespace Terrarium.Client
 			GameConfig.RelaunchCommandLine = "";
 
 			// Catch toplevel exceptions and assertions so we can stop the timer
-			// and report them properly
-			Debug.Listeners.Clear();
+			// and report them properly (Debug and Trace share the listeners)
+			Trace.Listeners.Clear();
 			traceListener = new TerrariumTraceListener(enableLogging);
-			Debug.Listeners.Add(traceListener);
+			Trace.Listeners.Add(traceListener);
 			
 			// Create/Open a global named mutex that indicates if the app is already running
 			// if we can get the mutex, then we are the only version running
@@ -531,7 +531,7 @@ namespace Terrarium.Client
                 Application.Restart();
 			}
 
-			Debug.Listeners.Clear();
+			Trace.Listeners.Clear();
 			if (maliciousOrganism)
 			{
 				Environment.Exit(0);

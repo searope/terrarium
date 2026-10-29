@@ -153,7 +153,7 @@ namespace Terrarium.Client
             this.Description = "View the properties of the selected organisms";
             this.Name = "PropertySheet";
             this.Title = "Organism Properties";
-            this.Closed += new System.EventHandler(this.PropertySheet_Closed);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PropertySheet_Closed);
             this.Load += new System.EventHandler(this.PropertySheet_Load);
             this.Controls.SetChildIndex(this.bottomPanel, 0);
             this.Controls.SetChildIndex(this.titleBar, 0);

@@ -12,6 +12,8 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Vortice;
 using Vortice.Direct2D1;
+using Vortice.Mathematics;
+using Color = System.Drawing.Color;
 using Vortice.DirectWrite;
 using Vortice.DXGI;
 using AlphaMode = Vortice.DCommon.AlphaMode;
@@ -154,8 +156,8 @@ namespace Terrarium.Renderer.DirectX
             }
 
             var context = ManagedDirectX.BeginDraw(this);
-            context.DrawBitmap(source.bitmap, destination.ToRectangleF(), 1.0f,
-                               BitmapInterpolationMode.NearestNeighbor, sourceRect.ToRectangleF());
+            context.DrawBitmap(source.bitmap, destination.ToRect(), 1.0f,
+                               BitmapInterpolationMode.NearestNeighbor, sourceRect.ToRect());
         }
 
         /// <summary>
@@ -240,7 +242,8 @@ namespace Terrarium.Renderer.DirectX
             }
 
             var context = ManagedDirectX.BeginDraw(this);
-            context.DrawText(text, format, layout, ManagedDirectX.GetBrush(color));
+            context.DrawText(text, format, new Rect(layout.X, layout.Y, layout.Width, layout.Height),
+                             ManagedDirectX.GetBrush(color));
         }
 
         private void CreateSurface()
@@ -256,7 +259,7 @@ namespace Terrarium.Renderer.DirectX
 
                 if (string.IsNullOrEmpty(image))
                 {
-                    bitmap = context.CreateBitmap(new Size(rect.Right, rect.Bottom), IntPtr.Zero, 0,
+                    bitmap = context.CreateBitmap(new SizeI(rect.Right, rect.Bottom), IntPtr.Zero, 0,
                                                   SurfaceProperties);
                 }
                 else
@@ -307,8 +310,9 @@ namespace Terrarium.Renderer.DirectX
                     var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
                     try
                     {
-                        return context.CreateBitmap(new Size(source.Width, source.Height),
-                                                    handle.AddrOfPinnedObject(), data.Stride, SurfaceProperties);
+                        return context.CreateBitmap(new SizeI(source.Width, source.Height),
+                                                    handle.AddrOfPinnedObject(), (uint) data.Stride,
+                                                    SurfaceProperties);
                     }
                     finally
                     {

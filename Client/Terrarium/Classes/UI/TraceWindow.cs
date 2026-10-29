@@ -284,7 +284,7 @@ namespace Terrarium.Client
             this.Description = "Use this to view organism trace messages and various engine trace messages";
             this.Name = "TraceWindow";
             this.Title = "Trace Window";
-            this.Closing += new System.ComponentModel.CancelEventHandler(this.Form_Closing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_Closing);
             this.Load += new System.EventHandler(this.Form_Load);
             this.Controls.SetChildIndex(this.bottomPanel, 0);
             this.Controls.SetChildIndex(this.titleBar, 0);

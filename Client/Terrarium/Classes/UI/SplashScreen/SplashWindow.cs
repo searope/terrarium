@@ -181,7 +181,7 @@ namespace Terrarium.Client.SplashScreen
             int top = Math.Max(screenRect.Y, screenRect.Y + (screenRect.Height - _height)/2);
 
             _hwnd = CreateWindowEx(exStyle, WindowClassName, "", style, left, top, _width, _height, IntPtr.Zero,
-                                   IntPtr.Zero, GetModuleHandle(null), null);
+                                   IntPtr.Zero, GetModuleHandle(null), IntPtr.Zero);
             if (_hwnd != IntPtr.Zero)
             {
                 ShowWindow(_hwnd, SW_SHOWNORMAL);
@@ -393,8 +393,7 @@ namespace Terrarium.Client.SplashScreen
         [DllImport("user32.dll", EntryPoint = "CreateWindowEx", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr CreateWindowEx(int dwExStyle, string lpszClassName, string lpszWindowName,
                                                     int style, int x, int y, int width, int height, IntPtr hWndParent,
-                                                    IntPtr hMenu, IntPtr hInst,
-                                                    [MarshalAs(UnmanagedType.AsAny)] object pvParam);
+                                                    IntPtr hMenu, IntPtr hInst, IntPtr lpParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int DefWindowProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);

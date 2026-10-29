@@ -66,7 +66,7 @@ namespace Terrarium.Persistence
             {
                 foreach (var type in assembly.GetTypes())
                 {
-                    if ((type.IsSerializable || typeof (ISaveRecord).IsAssignableFrom(type)) &&
+                    if ((IsSerializableType(type) || typeof (ISaveRecord).IsAssignableFrom(type)) &&
                         !type.IsGenericTypeDefinition &&
                         !typeof (Delegate).IsAssignableFrom(type) &&
                         !typeof (Exception).IsAssignableFrom(type))
@@ -221,7 +221,7 @@ namespace Terrarium.Persistence
                 }
                 else
                 {
-                    if (!type.IsSerializable)
+                    if (!IsSerializableType(type))
                     {
                         throw new InvalidOperationException("Can't save an object of type " + type +
                                                             "; it isn't [Serializable].");
@@ -727,6 +727,21 @@ namespace Terrarium.Persistence
 
         #region Types and fields
 
+        // [Serializable] and [NonSerialized] only mark which types and fields a
+        // save may hold; nothing here uses formatter-based serialization
+#pragma warning disable SYSLIB0050
+        private static bool IsSerializableType(Type type)
+        {
+            // Enums are always serializable
+            return type.IsEnum || (type.Attributes & TypeAttributes.Serializable) != 0;
+        }
+
+        private static bool IsSaved(FieldInfo field)
+        {
+            return (field.Attributes & FieldAttributes.NotSerialized) == 0;
+        }
+#pragma warning restore SYSLIB0050
+
         private static bool IsSimple(Type type)
         {
             return type.IsPrimitive || type.IsEnum || type == typeof (string) || type == typeof (decimal) ||
@@ -786,7 +801,7 @@ namespace Terrarium.Persistence
                 foreach (var field in current.GetFields(BindingFlags.Instance | BindingFlags.Public |
                                                         BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
-                    if (!field.IsNotSerialized)
+                    if (IsSaved(field))
                     {
                         all.Add(field);
                     }
