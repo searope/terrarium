@@ -93,16 +93,17 @@ namespace Terrarium.Hosting
         Organism GetOrganism(string id);
 
         /// <summary>
-        ///  Method for serializing all organisms in the scheduler.
+        ///  Returns the scheduler's organisms so they can be saved.  The value
+        ///  is only meant to be saved and handed back to RestoreOrganisms.
         /// </summary>
-        /// <param name="stream">The stream to serialize to.</param>
-        void SerializeOrganisms(Stream stream);
+        object SaveOrganisms();
 
         /// <summary>
-        ///  Method for deserializing all organisms in the scheduler.
+        ///  Replaces the scheduler's organisms with ones loaded from a save.
+        ///  Call CompleteOrganismDeserialization afterwards.
         /// </summary>
-        /// <param name="stream">The stream to deserialize.</param>
-        void DeserializeOrganisms(Stream stream);
+        /// <param name="organisms">A value SaveOrganisms returned before saving.</param>
+        void RestoreOrganisms(object organisms);
 
         /// <summary>
         ///  Finalize the deserialization of the organisms.

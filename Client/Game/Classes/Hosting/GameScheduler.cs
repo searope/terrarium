@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Security;
 using System.Threading;
 using OrganismBase;
@@ -274,34 +273,15 @@ namespace Terrarium.Hosting
             }
         }
 
-        public void SerializeOrganisms(Stream stream)
+        public object SaveOrganisms()
         {
-            try
-            {
-                var b = new BinaryFormatter();
-                b.Serialize(stream, _organisms);
-            }
-            catch (Exception e)
-            {
-                ErrorLog.LogHandledException(e);
-            }
+            return _organisms;
         }
 
-        public void DeserializeOrganisms(Stream stream)
+        public void RestoreOrganisms(object organisms)
         {
-            var b = new BinaryFormatter();
-            try
-            {
-                _organisms = (GameObjectCollection) b.Deserialize(stream);
-                _orgEnum = _organisms.GetEnumerator();
-            }
-            catch
-            {
-                _organisms = new GameObjectCollection();
-                _orgEnum = _organisms.GetEnumerator();
-
-                throw;
-            }
+            _organisms = (GameObjectCollection) organisms ?? new GameObjectCollection();
+            _orgEnum = _organisms.GetEnumerator();
         }
 
         public void CompleteOrganismDeserialization()

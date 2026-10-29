@@ -1207,6 +1207,18 @@ namespace Terrarium.Client
 				GameEngine.Current.Pac.LastRun = "";
 			}
 
+			if (!string.IsNullOrEmpty(GameEngine.Current.LoadWarning))
+			{
+				if (screenSaverMode == ScreenSaverMode.Run)
+				{
+					engineStateText += GameEngine.Current.LoadWarning + "\r\n";
+				}
+				else
+				{
+					MessageBox.Show(this, GameEngine.Current.LoadWarning, "Couldn't Open Terrarium", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				}
+			}
+
 			this.developerPanel.GameModeText = "Terrarium";
 			bottomPanel.Mode = screenSaverMode;
 

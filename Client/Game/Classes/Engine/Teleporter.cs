@@ -4,6 +4,7 @@
 
 using System;
 using System.Drawing;
+using System.Runtime.Serialization;
 using OrganismBase;
 
 namespace Terrarium.Game
@@ -14,7 +15,7 @@ namespace Terrarium.Game
     ///  object that can exist in the Terrarium currently.
     /// </summary>
     [Serializable]
-    public class Teleporter
+    public class Teleporter : IDeserializationCallback
     {
         /// <summary>
         ///  Contains an array of teleportation zones that move around
@@ -27,6 +28,15 @@ namespace Terrarium.Game
         ///  the new locations for zones.
         /// </summary>
         [NonSerialized] private Random _random = new Random(DateTime.Now.Millisecond);
+
+        /// <summary>
+        ///  The random number generator isn't saved; make a new one after a load.
+        /// </summary>
+        /// <param name="sender">Unused.</param>
+        void IDeserializationCallback.OnDeserialization(object sender)
+        {
+            _random = new Random(DateTime.Now.Millisecond);
+        }
 
         /// <summary>
         ///  Creates a Teleporter with the specified number of zones.

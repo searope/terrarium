@@ -5,12 +5,12 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 using OrganismBase;
 using Terrarium.Configuration;
 using Terrarium.Forms;
 using Terrarium.Hosting;
+using Terrarium.Persistence;
 using Terrarium.Tools;
 
 namespace Terrarium.Game
@@ -152,6 +152,25 @@ namespace Terrarium.Game
                 catch (Exception e)
                 {
                     ErrorLog.LogHandledException(e);
+
+                    // Keep the file that couldn't be read, so saving the new
+                    // terrarium in its place doesn't destroy it
+                    string backupPath = fileName + ".bak";
+                    try
+                    {
+                        File.Copy(fileName, backupPath, true);
+                    }
+                    catch (IOException copyError)
+                    {
+                        ErrorLog.LogHandledException(copyError);
+                        backupPath = null;
+                    }
+
+                    string reason = e is OldSaveFileException
+                                        ? e.Message
+                                        : "'" + fileName + "' couldn't be opened: " + e.Message;
+                    LoadWarning = reason + " A new terrarium was started" +
+                                  (backupPath != null ? "; the old file was kept as '" + backupPath + "'." : ".");
                 }
             }
 
@@ -168,6 +187,12 @@ namespace Terrarium.Game
             CurrentVector = vector;
             _scheduler.CurrentState = currentState;
         }
+
+        /// <summary>
+        ///  Explains why the saved terrarium couldn't be loaded and a new one
+        ///  was started instead, or null when nothing went wrong.
+        /// </summary>
+        public string LoadWarning { get; private set; }
 
         /// <summary>
         ///  Provides a managed location for creature assemblies.
@@ -581,24 +606,17 @@ namespace Terrarium.Game
                 }
             }
 
-            BinaryFormatter b = new BinaryFormatter();
-            FileStream stream = new FileStream(path, FileMode.Create);
-            try
-            {
-                b.Serialize(stream, WorldWidth);
-                b.Serialize(stream, WorldHeight);
-                b.Serialize(stream, MaxPlants);
-                b.Serialize(stream, MaxAnimals);
-
-                b.Serialize(stream, _plantCount);
-                b.Serialize(stream, AnimalCount);
-                b.Serialize(stream, CurrentVector);
-                Scheduler.SerializeOrganisms(stream);
-            }
-            finally
-            {
-                stream.Close();
-            }
+            SaveFile.Write(path, new SaveFile.Contents
+                                     {
+                                         WorldWidth = WorldWidth,
+                                         WorldHeight = WorldHeight,
+                                         MaxPlants = MaxPlants,
+                                         MaxAnimals = MaxAnimals,
+                                         PlantCount = _plantCount,
+                                         AnimalCount = AnimalCount,
+                                         Vector = CurrentVector,
+                                         Organisms = (GameObjectCollection) Scheduler.SaveOrganisms()
+                                     });
         }
 
         /// <summary>
@@ -623,23 +641,22 @@ namespace Terrarium.Game
                 }
             }
 
-            BinaryFormatter b = new BinaryFormatter();
-            FileStream stream = new FileStream(path, FileMode.Open);
             try
             {
-                _worldWidth = (int) b.Deserialize(stream);
-                _worldHeight = (int) b.Deserialize(stream);
-                _maxPlants = (int) b.Deserialize(stream);
-                _maxAnimals = (int) b.Deserialize(stream);
+                SaveFile.Contents contents = SaveFile.Read(path);
+                _worldWidth = contents.WorldWidth;
+                _worldHeight = contents.WorldHeight;
+                _maxPlants = contents.MaxPlants;
+                _maxAnimals = contents.MaxAnimals;
 
                 // Since we may be changing our settings to non-optimal settings, tell the engine to recalculate
                 // them next time
                 _reloadSettings = true;
 
-                _plantCount = (int) b.Deserialize(stream);
-                _animalCount = (int) b.Deserialize(stream);
-                CurrentVector = (WorldVector) b.Deserialize(stream);
-                Scheduler.DeserializeOrganisms(stream);
+                _plantCount = contents.PlantCount;
+                _animalCount = contents.AnimalCount;
+                CurrentVector = contents.Vector;
+                Scheduler.RestoreOrganisms(contents.Organisms);
 
                 PopulationData.BeginTick(CurrentVector.State.TickNumber, CurrentVector.State.StateGuid);
                 foreach (OrganismState state in CurrentVector.State.Organisms)
@@ -654,16 +671,11 @@ namespace Terrarium.Game
                 _plantCount = 0;
                 _animalCount = 0;
                 CurrentVector = null;
+                Scheduler.RestoreOrganisms(null);
 
-                // The scheduler should reset itself if it encounters an exception, so we don't need
-                // to do anything for it here
                 Trace.WriteLine("State could not be deserialized from " + path + ": " + e.Message + "\r\n" +
                                 e.StackTrace);
                 throw;
-            }
-            finally
-            {
-                stream.Close();
             }
         }
 

@@ -159,6 +159,7 @@ namespace OrganismBase
         ///  worldstate instances (like whether the organism is selected or not).
         /// </summary>
         /// <internal/>
+        [field: NonSerialized]
         public object RenderInfo { get; set; }
 
         /// <summary>

@@ -109,6 +109,9 @@
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.14" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System">
       <Name>System</Name>
       <HintPath>..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.0.3705\System.dll</HintPath>
@@ -157,6 +160,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Persistence\SaveFile.cs" />
+    <Compile Include="Classes\Persistence\OldSaveFileException.cs" />
+    <Compile Include="Classes\Persistence\ISaveRecord.cs" />
+    <Compile Include="Classes\Persistence\GraphSerializer.cs" />
     <Compile Include="..\VersionInfo.cs">
       <Link>VersionInfo.cs</Link>
     </Compile>
@@ -235,9 +242,6 @@
     <Compile Include="Classes\Engine\OrganismAssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Classes\Engine\OrganismBaseBinder.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Classes\Engine\OrganismQuanta.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -278,9 +282,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Classes\Hosting\OrganismWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Classes\Hosting\OrganismWrapperBinder.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Classes\Hosting\SecurityUtils.cs">

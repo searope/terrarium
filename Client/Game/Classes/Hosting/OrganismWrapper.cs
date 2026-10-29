@@ -3,18 +3,18 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization;
 using OrganismBase;
 using Terrarium.Game;
+using Terrarium.Persistence;
 using Terrarium.Tools;
 
 namespace Terrarium.Hosting
 {
     // Each creature gets wrapped by an OrganismWrapper so that we have
     // a place to put timing and other status information
-    [Serializable]
-    internal class OrganismWrapper : ISerializable
+    internal class OrganismWrapper : ISaveRecord
     {
         private readonly Organism _org;
         private bool _active = true;
@@ -25,15 +25,19 @@ namespace Terrarium.Hosting
         }
 
         /// <summary>
-        /// ISerializable constructor
+        ///  Rebuilds a wrapper and its organism from the values GetSaveValues saved.
         /// </summary>
-        /// <param name="info"></param>
-        /// <param name="c"></param>
-        private OrganismWrapper(SerializationInfo info, StreamingContext c)
+        /// <param name="values">The saved values.</param>
+        internal static OrganismWrapper FromSaveValues(IDictionary<string, object> values)
+        {
+            return new OrganismWrapper(values);
+        }
+
+        private OrganismWrapper(IDictionary<string, object> values)
         {
             try
             {
-                var t = Type.GetType((string) info.GetValue("OrganismType", typeof (string)));
+                var t = Type.GetType((string) values["OrganismType"]);
                 _org = (Organism) Activator.CreateInstance(t);
             }
             catch (Exception e)
@@ -49,18 +53,16 @@ namespace Terrarium.Hosting
             }
 
             // Give the animal a chance to deserialize itself
-            (_org).InternalOrganismDeserialize(new MemoryStream((byte[]) info.GetValue("OrganismInfo", typeof (byte[]))));
+            (_org).InternalOrganismDeserialize(new MemoryStream((byte[]) values["OrganismInfo"]));
             if (_org is Animal)
             {
-                ((Animal) _org).InternalAnimalDeserialize(
-                    new MemoryStream((byte[]) info.GetValue("AnimalInfo", typeof (byte[]))));
-                _org.SerializedStream = new MemoryStream((byte[]) info.GetValue("UserInfo", typeof (byte[])));
+                ((Animal) _org).InternalAnimalDeserialize(new MemoryStream((byte[]) values["AnimalInfo"]));
+                _org.SerializedStream = new MemoryStream((byte[]) values["UserInfo"]);
             }
             else
             {
-                ((Plant) _org).InternalPlantDeserialize(
-                    new MemoryStream((byte[]) info.GetValue("PlantInfo", typeof (byte[]))));
-                _org.SerializedStream = new MemoryStream((byte[]) info.GetValue("UserInfo", typeof (byte[])));
+                ((Plant) _org).InternalPlantDeserialize(new MemoryStream((byte[]) values["PlantInfo"]));
+                _org.SerializedStream = new MemoryStream((byte[]) values["UserInfo"]);
             }
         }
 
@@ -90,16 +92,16 @@ namespace Terrarium.Hosting
             set { _active = value; }
         }
 
-        #region ISerializable Members
+        #region ISaveRecord Members
 
-        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+        void ISaveRecord.GetSaveValues(IDictionary<string, object> info)
         {
             if (_org == null) return;
-            info.AddValue("OrganismType", _org.GetType().AssemblyQualifiedName);
+            info["OrganismType"] = _org.GetType().AssemblyQualifiedName;
 
             var m = new MemoryStream();
             (_org).InternalOrganismSerialize(m);
-            info.AddValue("OrganismInfo", m.ToArray());
+            info["OrganismInfo"] = m.ToArray();
 
             // Let the animal contribute to serialization.  We don't use BinarySerialization
             // here because we don't want animals to be able to put bogus items in their
@@ -109,7 +111,7 @@ namespace Terrarium.Hosting
             {
                 m = new MemoryStream();
                 ((Animal) _org).InternalAnimalSerialize(m);
-                info.AddValue("AnimalInfo", m.ToArray());
+                info["AnimalInfo"] = m.ToArray();
 
                 m = new MemoryStream();
 
@@ -130,13 +132,13 @@ namespace Terrarium.Hosting
                     }
                     m = new MemoryStream();
                 }
-                info.AddValue("UserInfo", m.ToArray());
+                info["UserInfo"] = m.ToArray();
             }
             else
             {
                 m = new MemoryStream();
                 ((Plant) _org).InternalPlantSerialize(m);
-                info.AddValue("PlantInfo", m.ToArray());
+                info["PlantInfo"] = m.ToArray();
 
                 m = new MemoryStream();
                 try
@@ -157,7 +159,7 @@ namespace Terrarium.Hosting
                     m = new MemoryStream();
                 }
 
-                info.AddValue("UserInfo", m.ToArray());
+                info["UserInfo"] = m.ToArray();
             }
         }
 
