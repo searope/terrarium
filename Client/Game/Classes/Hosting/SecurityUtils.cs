@@ -6,7 +6,6 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security;
-using System.Security.Policy;
 
 namespace Terrarium.Hosting
 {
@@ -16,31 +15,6 @@ namespace Terrarium.Hosting
     /// </summary>
     public class SecurityUtils
     {
-        /// <summary>
-        ///  Determines if security is enabled on the machine.
-        /// </summary>
-        public static bool SecurityEnabled
-        {
-            get
-            {
-#pragma warning disable 618 
-                return SecurityManager.SecurityEnabled;
-#pragma warning restore 618
-            }
-        }
-
-        /// <summary>
-        ///  Determine if verification has been disabled.
-        /// </summary>
-        public static bool VerificationDisabled
-        {
-            get
-            {
-                var st = new StrongNameVerificationState();
-                return (st.GlobalSkip || st.TerrariumSkip);
-            }
-        }
-
         /// <summary>
         ///  Find out if a managed debugger is attached.
         /// </summary>

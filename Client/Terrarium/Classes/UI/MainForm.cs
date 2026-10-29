@@ -120,11 +120,8 @@ namespace Terrarium.Client
 		private System.ComponentModel.IContainer components;
 		private System.Windows.Forms.Timer timer1;
 		private OpenFileDialog openFileDialog1;
-		private System.Windows.Forms.ContextMenu contextMenu1;
-		private System.Windows.Forms.MenuItem menuItemText;
-		private System.Windows.Forms.MenuItem menuItemDamage;
-		private System.Windows.Forms.MenuItem menuItemEnergy;
-		private System.Windows.Forms.MenuItem menuItemAbout;
+		private System.Windows.Forms.ContextMenuStrip contextMenu1;
+		private System.Windows.Forms.ToolStripMenuItem menuItemAbout;
 		#endregion
 		#region Engine Timing Fields
 		Int64 totalPaintFrameTime = 0;
@@ -159,11 +156,8 @@ namespace Terrarium.Client
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.contextMenu1 = new System.Windows.Forms.ContextMenu();
-            this.menuItemAbout = new System.Windows.Forms.MenuItem();
-            this.menuItemText = new System.Windows.Forms.MenuItem();
-            this.menuItemDamage = new System.Windows.Forms.MenuItem();
-            this.menuItemEnergy = new System.Windows.Forms.MenuItem();
+            this.contextMenu1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.menuItemAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.tddGameView = new Terrarium.Renderer.TerrariumDirectDrawGameView();
             this.developerPanel = new Terrarium.Forms.Classes.Controls.DeveloperPanel();
             this.bottomPanel = new Terrarium.Forms.GlassBottomPanel();
@@ -187,29 +181,13 @@ namespace Terrarium.Client
             // 
             // contextMenu1
             // 
-            this.contextMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.contextMenu1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuItemAbout});
             // 
             // menuItemAbout
             // 
-            this.menuItemAbout.Index = 0;
             this.menuItemAbout.Text = "About Terrarium...";
             this.menuItemAbout.Click += new System.EventHandler(this.menuItemAbout_Click);
-            // 
-            // menuItemText
-            // 
-            this.menuItemText.Index = -1;
-            this.menuItemText.Text = "";
-            // 
-            // menuItemDamage
-            // 
-            this.menuItemDamage.Index = -1;
-            this.menuItemDamage.Text = "";
-            // 
-            // menuItemEnergy
-            // 
-            this.menuItemEnergy.Index = -1;
-            this.menuItemEnergy.Text = "";
             // 
             // tddGameView
             // 
@@ -297,7 +275,7 @@ namespace Terrarium.Client
             // 
             this.BackColor = System.Drawing.Color.Magenta;
             this.ClientSize = new System.Drawing.Size(819, 533);
-            this.ContextMenu = this.contextMenu1;
+            this.ContextMenuStrip = this.contextMenu1;
             this.Controls.Add(this.tddGameView);
             this.Controls.Add(this.developerPanel);
             this.Controls.Add(this.titleBar);
@@ -474,23 +452,6 @@ namespace Terrarium.Client
 				return 0;
 			}
 
-			// early check for an enabled security system
-			// if it's not enabled, bail out without running code
-			if (!SecurityUtils.SecurityEnabled)
-			{
-				MessageBox.Show("Terrarium will not run if security is disabled.\nPlease use \"caspol -s on\" to enable",
-					"Terrarium Security Check");
-				return 0;
-			}
-
-			// check for globally disabled strong name verification or selective terrarium verification
-			if (SecurityUtils.VerificationDisabled)
-			{
-				MessageBox.Show("Terrarium will not run if strong name verification is disabled.\nPlease use \"sn.exe -Vx\" to enable it",
-					"Terrarium Security Check");
-				return 0;
-			}
-
 			// Disable directX if the user is running in too low of a resolution
 			if (Screen.PrimaryScreen.Bounds.Width < 800 ||
 				Screen.PrimaryScreen.Bounds.Height < 600)
@@ -647,11 +608,13 @@ namespace Terrarium.Client
 
 			this.taskBar = new NotifyIcon();
 			this.taskBar.DoubleClick += new EventHandler(taskBar_DoubleClick);
-			MenuItem showMenu = new MenuItem("Show", new EventHandler(this.taskBar_DoubleClick));
-			showMenu.DefaultItem = true;
-			MenuItem settingsMenu = new MenuItem("Settings...", new EventHandler(this.SettingsButton_Click));
-			MenuItem exitMenu = new MenuItem("Exit", new EventHandler(this.Close_Click));
-			this.taskBar.ContextMenu = new ContextMenu(new MenuItem[] { showMenu, settingsMenu, new MenuItem("-"), exitMenu });
+			ToolStripMenuItem showMenu = new ToolStripMenuItem("Show", null, new EventHandler(this.taskBar_DoubleClick));
+			// Double-clicking the icon does the same thing, so show it as the default item
+			showMenu.Font = new Font(showMenu.Font, FontStyle.Bold);
+			ToolStripMenuItem settingsMenu = new ToolStripMenuItem("Settings...", null, new EventHandler(this.SettingsButton_Click));
+			ToolStripMenuItem exitMenu = new ToolStripMenuItem("Exit", null, new EventHandler(this.Close_Click));
+			this.taskBar.ContextMenuStrip = new ContextMenuStrip();
+			this.taskBar.ContextMenuStrip.Items.AddRange(new ToolStripItem[] { showMenu, settingsMenu, new ToolStripSeparator(), exitMenu });
 
 			this.taskBar.Icon = this.Icon;
 			this.taskBar.Visible = false;
@@ -1032,11 +995,6 @@ namespace Terrarium.Client
 			}
 		}
 
-		private void menuItemPeerProperties_Click(object sender, System.EventArgs e)
-		{
-			ShowPropertiesDialog(null);
-		}
-
 		private void ShowPropertiesDialog(string panel)
 		{
 			PeerProperties peerForm = new PeerProperties();
@@ -1278,7 +1236,7 @@ namespace Terrarium.Client
 
 				this.ShowUI = false;
 				this.Fullscreen = true;
-				this.ContextMenu = null;
+				this.ContextMenuStrip = null;
 				this.tddGameView.DrawText = true;
 				Cursor.Hide();
 				Cursor.Position = new Point(this.Width / 2, this.Height / 2);

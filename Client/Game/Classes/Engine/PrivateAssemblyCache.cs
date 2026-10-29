@@ -9,7 +9,6 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Security;
-using System.Security.Permissions;
 using OrganismBase;
 using Terrarium.Configuration;
 using Terrarium.Tools;
@@ -231,7 +230,18 @@ namespace Terrarium.Game
         /// <threadsafe/>
         public string GetFileName(string fullName)
         {
-            return AssemblyDirectory + "\\" + GetAssemblyShortName(fullName) + ".dll";
+            var directory = Path.GetFullPath(AssemblyDirectory);
+            var fileName = Path.GetFullPath(Path.Combine(directory, GetAssemblyShortName(fullName) + ".dll"));
+
+            // An assembly name could contain path characters; make sure the file
+            // can only ever be inside the cache directory
+            if (!string.Equals(Path.GetDirectoryName(fileName), directory.TrimEnd(Path.DirectorySeparatorChar),
+                               StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("The assembly name '" + fullName + "' isn't a valid organism assembly name.");
+            }
+
+            return fileName;
         }
 
         /// <summary>
@@ -284,38 +294,27 @@ namespace Terrarium.Game
         /// <param name="assemblies">The assemblies to be blacklisted.</param>
         public void BlacklistAssemblies(string[] assemblies)
         {
-            // Ensure that the caller can't pass us a name that actually makes this file get created somewhere else
-            var permission = new FileIOPermission(FileIOPermissionAccess.AllAccess,
-                                                  new[] {AssemblyDirectory});
-
-            try
+            // GetFileName only returns files inside the assembly directory, so
+            // the caller can't make this file get created somewhere else
+            if (assemblies != null)
             {
-                permission.PermitOnly();
-
-                if (assemblies != null)
+                foreach (var assembly in assemblies)
                 {
-                    foreach (var assembly in assemblies)
+                    var fileName = GetFileName(assembly);
+                    try
                     {
-                        var fileName = GetFileName(assembly);
-                        try
+                        // Replace this file with a zero length file (or create one), so we won't get it again
+                        using (var stream = File.Create(fileName))
                         {
-                            // Replace this file with a zero length file (or create one), so we won't get it again
-                            using (var stream = File.Create(fileName))
-                            {
-                                stream.Close();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine("Error blacklisting organism:");
-                            ErrorLog.LogHandledException(e);
+                            stream.Close();
                         }
                     }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("Error blacklisting organism:");
+                        ErrorLog.LogHandledException(e);
+                    }
                 }
-            }
-            finally
-            {
-                CodeAccessPermission.RevertPermitOnly();
             }
         }
 
@@ -348,23 +347,8 @@ namespace Terrarium.Game
         /// <returns>True if the assembly exists, false otherwise.</returns>
         public Boolean Exists(string fullName)
         {
-            bool exists;
-            var asmDir = Path.GetFullPath(AssemblyDirectory);
-
-            // Make sure we can't be hacked to return whether files exist by only allowing our code
-            // to access files in the assembly directory.
-            var permission = new FileIOPermission(FileIOPermissionAccess.AllAccess, new[] {asmDir});
-            try
-            {
-                permission.PermitOnly();
-                exists = File.Exists(GetFileName(fullName));
-            }
-            finally
-            {
-                CodeAccessPermission.RevertPermitOnly();
-            }
-
-            return exists;
+            // GetFileName only returns files inside the assembly directory
+            return File.Exists(GetFileName(fullName));
         }
 
         /// <summary>
@@ -388,37 +372,26 @@ namespace Terrarium.Game
                 return;
             }
 
-            // Ensure that the caller can't pass us a name that actually makes this file get created somewhere else
-            var permission = new FileIOPermission(FileIOPermissionAccess.AllAccess,
-                                                  new[] {directory});
-
+            // GetFileName only returns files inside the assembly directory, so
+            // the caller can't make this file get created somewhere else
+            var targetStream = File.Create(fileName);
             try
             {
-                permission.PermitOnly();
+                targetStream.Write(bytes, 0, bytes.Length);
+            }
+            catch
+            {
+                targetStream.Close();
 
-                var targetStream = File.Create(fileName);
-                try
-                {
-                    targetStream.Write(bytes, 0, bytes.Length);
-                }
-                catch
-                {
-                    targetStream.Close();
+                // If something happens, delete the file so we don't have
+                // a corrupted file hanging around
+                File.Delete(fileName);
 
-                    // If something happens, delete the file so we don't have
-                    // a corrupted file hanging around
-                    File.Delete(fileName);
-
-                    throw;
-                }
-                finally
-                {
-                    targetStream.Close();
-                }
+                throw;
             }
             finally
             {
-                CodeAccessPermission.RevertPermitOnly();
+                targetStream.Close();
             }
 
             OnPacAssembliesChanged(new EventArgs());
@@ -485,13 +458,10 @@ namespace Terrarium.Game
                 // In case anything goes wrong with the symbols (access denied and others), we are good
             }
 
-            // Ensure that the caller can't pass us a name that actually makes this file get created somewhere else
-            var permission = new FileIOPermission(FileIOPermissionAccess.AllAccess,
-                                                  new[] {directory});
+            // GetFileName only returns files inside the assembly directory, so
+            // the caller can't make this file get created somewhere else
             try
             {
-                permission.PermitOnly();
-
                 var targetStream = File.Create(fileName);
                 try
                 {
@@ -554,7 +524,6 @@ namespace Terrarium.Game
             }
             finally
             {
-                CodeAccessPermission.RevertPermitOnly();
                 sourceStream.Close();
             }
 
@@ -641,11 +610,6 @@ namespace Terrarium.Game
             }
 
             // See if it is an organism assembly
-            // Need to assert permission to open files on disk because we need to load organism assemblies
-            // and organism code could be on the stack because it may be loading an assembly that
-            // has not been loaded yet.  This would fail without the assertion.
-            var permission = new FileIOPermission(PermissionState.Unrestricted);
-            permission.Assert();
 
             // Since .NET 4 this event is also raised for satellite resource
             // assemblies (Controls.resources and the like) and generated

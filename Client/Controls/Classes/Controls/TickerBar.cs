@@ -19,6 +19,7 @@ namespace Terrarium.Forms
 	public class TickerBar : System.Windows.Forms.UserControl
 	{	
 		private Thread							backgroundThread = null;
+		private ManualResetEvent				stopRequested = new ManualResetEvent(false);
 
 		private TickerMessage					currentMessage = new TickerMessage();
 		private TickerMessageQueue messages = new TickerMessageQueue();
@@ -93,6 +94,7 @@ namespace Terrarium.Forms
 			this.transitionAlpha = 0;
 			this.transition = true;
 
+			this.stopRequested.Reset();
 			this.backgroundThread = new Thread( new ThreadStart(this.ThreadFunction) );
 			this.backgroundThread.Priority = ThreadPriority.Highest;
 			this.backgroundThread.IsBackground = false;
@@ -106,7 +108,7 @@ namespace Terrarium.Forms
 		{
 			if ( this.backgroundThread != null )
 			{
-				this.backgroundThread.Abort();
+				this.stopRequested.Set();
 				this.backgroundThread.Join( 2000 );
 				this.backgroundThread = null;
 			}
@@ -226,7 +228,7 @@ namespace Terrarium.Forms
 
 		private void ThreadFunction()
 		{
-			while( true )
+			while( !this.stopRequested.WaitOne( 0 ) )
 			{
 				if ( this.transition == true )
 				{
@@ -242,7 +244,7 @@ namespace Terrarium.Forms
 					
 					this.Invalidate();
 
-					Thread.Sleep( 50 );
+					this.stopRequested.WaitOne( 50 );
 				}
 				else
 				{						
@@ -251,7 +253,7 @@ namespace Terrarium.Forms
 						this.transition = true;
 					}
 					
-					Thread.Sleep( 500 );
+					this.stopRequested.WaitOne( 500 );
 				}
 
 			}

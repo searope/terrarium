@@ -289,9 +289,6 @@
     <Compile Include="Classes\Hosting\SimpleSequentialEnumerator.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Classes\Hosting\StrongNameVerificationState.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Classes\Hosting\TerrariumOrganism.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -21,21 +21,20 @@ namespace Terrarium.Client
         private System.Windows.Forms.Timer timerAutoRefresh;
 		private Terrarium.Glass.GlassButton closeButton;
 		private Terrarium.Glass.GlassButton refreshButton;
-        private System.Windows.Forms.DataGrid dataGrid1;
+        private System.Windows.Forms.DataGridView dataGrid1;
 
-		private System.Windows.Forms.DataGridTableStyle dataGridTableStyle1;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn1;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn2;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn3;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn4;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn5;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn6;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn7;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn8;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn9;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn10;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn11;
-		private System.Windows.Forms.DataGridTextBoxColumn dataGridTextBoxColumn12;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn1;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn2;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn3;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn4;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn5;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn6;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn7;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn8;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn9;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn10;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn11;
+		private System.Windows.Forms.DataGridViewTextBoxColumn dataGridTextBoxColumn12;
         private ResizeBar resizeBar1;
 
         private System.ComponentModel.IContainer components;
@@ -57,20 +56,19 @@ namespace Terrarium.Client
             this.timerAutoRefresh = new System.Windows.Forms.Timer(this.components);
             this.closeButton = new Terrarium.Glass.GlassButton();
             this.refreshButton = new Terrarium.Glass.GlassButton();
-            this.dataGrid1 = new System.Windows.Forms.DataGrid();
-            this.dataGridTableStyle1 = new System.Windows.Forms.DataGridTableStyle();
-            this.dataGridTextBoxColumn2 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn3 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn4 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn5 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn10 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn6 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn9 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn7 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn8 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn1 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn12 = new System.Windows.Forms.DataGridTextBoxColumn();
-            this.dataGridTextBoxColumn11 = new System.Windows.Forms.DataGridTextBoxColumn();
+            this.dataGrid1 = new System.Windows.Forms.DataGridView();
+            this.dataGridTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn10 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn6 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn9 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn7 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn8 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn12 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridTextBoxColumn11 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.resizeBar1 = new Terrarium.Forms.ResizeBar();
             this.bottomPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid1)).BeginInit();
@@ -157,40 +155,23 @@ namespace Terrarium.Client
             this.refreshButton.UseStyles = true;
             this.refreshButton.UseVisualStyleBackColor = false;
             this.refreshButton.Click += new System.EventHandler(this.Refresh_Click);
-            // 
+            //
             // dataGrid1
-            // 
-            this.dataGrid1.AlternatingBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            //
+            this.dataGrid1.AllowUserToAddRows = false;
+            this.dataGrid1.AllowUserToDeleteRows = false;
+            this.dataGrid1.AllowUserToResizeRows = false;
+            this.dataGrid1.AlternatingRowsDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(216)))), ((int)(((byte)(216)))), ((int)(((byte)(216)))));
             this.dataGrid1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGrid1.BackgroundColor = System.Drawing.Color.Gray;
             this.dataGrid1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.dataGrid1.CaptionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.dataGrid1.CaptionForeColor = System.Drawing.Color.White;
-            this.dataGrid1.CaptionVisible = false;
-            this.dataGrid1.DataMember = "";
-            this.dataGrid1.FlatMode = true;
-            this.dataGrid1.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.dataGrid1.ForeColor = System.Drawing.Color.Black;
-            this.dataGrid1.GridLineColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.dataGrid1.HeaderBackColor = System.Drawing.Color.Gray;
-            this.dataGrid1.HeaderForeColor = System.Drawing.Color.White;
-            this.dataGrid1.Location = new System.Drawing.Point(12, 81);
-            this.dataGrid1.Name = "dataGrid1";
-            this.dataGrid1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.dataGrid1.Size = new System.Drawing.Size(410, 232);
-            this.dataGrid1.TabIndex = 8;
-            this.dataGrid1.TableStyles.AddRange(new System.Windows.Forms.DataGridTableStyle[] {
-            this.dataGridTableStyle1});
-            // 
-            // dataGridTableStyle1
-            // 
-            this.dataGridTableStyle1.AlternatingBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(216)))), ((int)(((byte)(216)))), ((int)(((byte)(216)))));
-            this.dataGridTableStyle1.BackColor = System.Drawing.Color.White;
-            this.dataGridTableStyle1.DataGrid = this.dataGrid1;
-            this.dataGridTableStyle1.ForeColor = System.Drawing.Color.Black;
-            this.dataGridTableStyle1.GridColumnStyles.AddRange(new System.Windows.Forms.DataGridColumnStyle[] {
+            this.dataGrid1.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.Gray;
+            this.dataGrid1.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.dataGrid1.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.White;
+            this.dataGrid1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGrid1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.dataGridTextBoxColumn2,
             this.dataGridTextBoxColumn3,
             this.dataGridTextBoxColumn4,
@@ -203,115 +184,114 @@ namespace Terrarium.Client
             this.dataGridTextBoxColumn1,
             this.dataGridTextBoxColumn12,
             this.dataGridTextBoxColumn11});
-            this.dataGridTableStyle1.HeaderBackColor = System.Drawing.Color.Gray;
-            this.dataGridTableStyle1.HeaderForeColor = System.Drawing.Color.White;
-            this.dataGridTableStyle1.MappingName = "History";
-            // 
+            this.dataGrid1.DefaultCellStyle.BackColor = System.Drawing.Color.White;
+            this.dataGrid1.DefaultCellStyle.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.dataGrid1.DefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+            this.dataGrid1.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.dataGrid1.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.White;
+            this.dataGrid1.EnableHeadersVisualStyles = false;
+            this.dataGrid1.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.dataGrid1.Location = new System.Drawing.Point(12, 81);
+            this.dataGrid1.Name = "dataGrid1";
+            this.dataGrid1.ReadOnly = true;
+            this.dataGrid1.RowHeadersVisible = false;
+            this.dataGrid1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dataGrid1.Size = new System.Drawing.Size(410, 232);
+            this.dataGrid1.TabIndex = 8;
+            //
             // dataGridTextBoxColumn2
-            // 
-            this.dataGridTextBoxColumn2.Format = "";
-            this.dataGridTextBoxColumn2.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn2.DataPropertyName = "SpeciesName";
             this.dataGridTextBoxColumn2.HeaderText = "Species";
-            this.dataGridTextBoxColumn2.MappingName = "SpeciesName";
+            this.dataGridTextBoxColumn2.Name = "dataGridTextBoxColumn2";
             this.dataGridTextBoxColumn2.ReadOnly = true;
             this.dataGridTextBoxColumn2.Width = 125;
-            // 
+            //
             // dataGridTextBoxColumn3
-            // 
-            this.dataGridTextBoxColumn3.Format = "d";
-            this.dataGridTextBoxColumn3.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn3.DataPropertyName = "Population";
             this.dataGridTextBoxColumn3.HeaderText = "Population";
-            this.dataGridTextBoxColumn3.MappingName = "Population";
+            this.dataGridTextBoxColumn3.Name = "dataGridTextBoxColumn3";
             this.dataGridTextBoxColumn3.ReadOnly = true;
             this.dataGridTextBoxColumn3.Width = 75;
-            // 
+            //
             // dataGridTextBoxColumn4
-            // 
-            this.dataGridTextBoxColumn4.Format = "d";
-            this.dataGridTextBoxColumn4.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn4.DataPropertyName = "BirthCount";
             this.dataGridTextBoxColumn4.HeaderText = "Births";
-            this.dataGridTextBoxColumn4.MappingName = "BirthCount";
+            this.dataGridTextBoxColumn4.Name = "dataGridTextBoxColumn4";
             this.dataGridTextBoxColumn4.ReadOnly = true;
             this.dataGridTextBoxColumn4.Width = 50;
-            // 
+            //
             // dataGridTextBoxColumn5
-            // 
-            this.dataGridTextBoxColumn5.Format = "d";
-            this.dataGridTextBoxColumn5.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn5.DataPropertyName = "StarvedCount";
             this.dataGridTextBoxColumn5.HeaderText = "Starved";
-            this.dataGridTextBoxColumn5.MappingName = "StarvedCount";
+            this.dataGridTextBoxColumn5.Name = "dataGridTextBoxColumn5";
             this.dataGridTextBoxColumn5.ReadOnly = true;
             this.dataGridTextBoxColumn5.Width = 75;
-            // 
+            //
             // dataGridTextBoxColumn10
-            // 
-            this.dataGridTextBoxColumn10.Format = "d";
-            this.dataGridTextBoxColumn10.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn10.DataPropertyName = "OldAgeCount";
             this.dataGridTextBoxColumn10.HeaderText = "Old Age";
-            this.dataGridTextBoxColumn10.MappingName = "OldAgeCount";
+            this.dataGridTextBoxColumn10.Name = "dataGridTextBoxColumn10";
             this.dataGridTextBoxColumn10.ReadOnly = true;
             this.dataGridTextBoxColumn10.Width = 75;
-            // 
+            //
             // dataGridTextBoxColumn6
-            // 
-            this.dataGridTextBoxColumn6.Format = "d";
-            this.dataGridTextBoxColumn6.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn6.DataPropertyName = "KilledCount";
             this.dataGridTextBoxColumn6.HeaderText = "Killed";
-            this.dataGridTextBoxColumn6.MappingName = "KilledCount";
+            this.dataGridTextBoxColumn6.Name = "dataGridTextBoxColumn6";
             this.dataGridTextBoxColumn6.ReadOnly = true;
             this.dataGridTextBoxColumn6.Width = 50;
-            // 
+            //
             // dataGridTextBoxColumn9
-            // 
-            this.dataGridTextBoxColumn9.Format = "d";
-            this.dataGridTextBoxColumn9.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn9.DataPropertyName = "SickCount";
             this.dataGridTextBoxColumn9.HeaderText = "Sick";
-            this.dataGridTextBoxColumn9.MappingName = "SickCount";
+            this.dataGridTextBoxColumn9.Name = "dataGridTextBoxColumn9";
             this.dataGridTextBoxColumn9.ReadOnly = true;
             this.dataGridTextBoxColumn9.Width = 50;
-            // 
+            //
             // dataGridTextBoxColumn7
-            // 
-            this.dataGridTextBoxColumn7.Format = "d";
-            this.dataGridTextBoxColumn7.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn7.DataPropertyName = "ErrorCount";
             this.dataGridTextBoxColumn7.HeaderText = "Errors";
-            this.dataGridTextBoxColumn7.MappingName = "ErrorCount";
+            this.dataGridTextBoxColumn7.Name = "dataGridTextBoxColumn7";
             this.dataGridTextBoxColumn7.ReadOnly = true;
             this.dataGridTextBoxColumn7.Width = 50;
-            // 
+            //
             // dataGridTextBoxColumn8
-            // 
-            this.dataGridTextBoxColumn8.Format = "d";
-            this.dataGridTextBoxColumn8.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn8.DataPropertyName = "TimeoutCount";
             this.dataGridTextBoxColumn8.HeaderText = "Timeouts";
-            this.dataGridTextBoxColumn8.MappingName = "TimeoutCount";
+            this.dataGridTextBoxColumn8.Name = "dataGridTextBoxColumn8";
             this.dataGridTextBoxColumn8.ReadOnly = true;
             this.dataGridTextBoxColumn8.Width = 50;
-            // 
+            //
             // dataGridTextBoxColumn1
-            // 
-            this.dataGridTextBoxColumn1.Format = "d";
-            this.dataGridTextBoxColumn1.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn1.DataPropertyName = "SecurityViolationCount";
             this.dataGridTextBoxColumn1.HeaderText = "Security Violations";
-            this.dataGridTextBoxColumn1.MappingName = "SecurityViolationCount";
+            this.dataGridTextBoxColumn1.Name = "dataGridTextBoxColumn1";
             this.dataGridTextBoxColumn1.ReadOnly = true;
             this.dataGridTextBoxColumn1.Width = 75;
-            // 
+            //
             // dataGridTextBoxColumn12
-            // 
-            this.dataGridTextBoxColumn12.Format = "d";
-            this.dataGridTextBoxColumn12.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn12.DataPropertyName = "TeleportedToCount";
             this.dataGridTextBoxColumn12.HeaderText = "Teleported Here";
-            this.dataGridTextBoxColumn12.MappingName = "TeleportedToCount";
+            this.dataGridTextBoxColumn12.Name = "dataGridTextBoxColumn12";
             this.dataGridTextBoxColumn12.ReadOnly = true;
             this.dataGridTextBoxColumn12.Width = 75;
-            // 
+            //
             // dataGridTextBoxColumn11
-            // 
-            this.dataGridTextBoxColumn11.Format = "d";
-            this.dataGridTextBoxColumn11.FormatInfo = null;
+            //
+            this.dataGridTextBoxColumn11.DataPropertyName = "TeleportedFromCount";
             this.dataGridTextBoxColumn11.HeaderText = "Teleported Away";
-            this.dataGridTextBoxColumn11.MappingName = "TeleportedFromCount";
+            this.dataGridTextBoxColumn11.Name = "dataGridTextBoxColumn11";
             this.dataGridTextBoxColumn11.ReadOnly = true;
             this.dataGridTextBoxColumn11.Width = 75;
             // 
@@ -351,6 +331,9 @@ namespace Terrarium.Client
         public ReportStats()
         {
             InitializeComponent();
+
+            // Only the columns laid out in the designer are shown
+            this.dataGrid1.AutoGenerateColumns = false;
 
             this.bottomPanel.Controls.Remove(this.resizeBar1);
             this.bottomPanel.Controls.Add(this.resizeBar1);
@@ -412,14 +395,13 @@ namespace Terrarium.Client
                 if (reportData == null)
                 {
                     reportData = data;
-                    dataGrid1.SetDataBinding(reportData, "History");
+                    dataGrid1.DataSource = reportData;
+                    dataGrid1.DataMember = "History";
                 }
                 else
                 {
-                    // Binding a new data set rebuilds the grid's columns and
-                    // removes the cell editor; if that editor has focus, the
-                    // grid then tries to edit row 0, which an empty report
-                    // doesn't have.  Swapping the rows in place avoids that.
+                    // Swap the rows in place so the grid keeps its scroll
+                    // position and selection between refreshes
                     DataTable history = reportData.Tables["History"];
                     history.BeginLoadData();
                     history.Clear();
