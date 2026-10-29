@@ -9,11 +9,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
-using System.Web;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using System.Data;
@@ -26,11 +23,9 @@ using Terrarium.Forms;
 using Terrarium.Game;
 using Terrarium.Hosting;
 using Terrarium.Glass;
-using Terrarium.PeerToPeer;
 using Terrarium.Renderer;
 using Terrarium.Renderer.DirectX;
 using Terrarium.Tools;
-using Terrarium.Services.Species;
 
 using OrganismBase;
 
@@ -67,13 +62,13 @@ namespace Terrarium.Client
 
 		private static TerrariumTraceListener traceListener;
 
-		private const string ecosystemStateFileName = "\\Ecosystem.bin";
+		// The terrarium that opens when no file is given, and that the screensaver runs
+		private const string defaultTerrariumFileName = "Terrarium.ter";
 
 		private static string[] commandLineArgs;
 
 		private bool alreadyRunningTimer = false;
 		private const Boolean traceEnabled = true;
-		private bool runningBlockedVersion = false;
 
 		// Mutex to detect multiple versions of the game
         private static string appMutexName = "{2AED158D-74C9-4297-B83B-13B87FCA6BFC}";
@@ -104,8 +99,6 @@ namespace Terrarium.Client
 
 		private static bool maliciousOrganism = false;
 		private static bool relaunch = false;
-		private static bool performBlacklistCheck = false;
-		private static bool blacklistCheckOnRestart = false;
 
         // New command line option holders
         private static bool wasRelaunched = false;
@@ -114,11 +107,8 @@ namespace Terrarium.Client
         private static FormWindowState windowState = FormWindowState.Normal;
 
         // Screen messages
-		private const string emptyEcosystemMessage = "Waiting for animals to be teleported from other peers running Terrarium...";
-		private const string emptyEcosystemServerDownMessage = "The Terrarium server is experiencing temporary difficulties.  This is probably why you aren't receiving any animals.";
 		private const string emptyTerrariumMessage = "Introduce animals into your terrarium by clicking on the 'Introduce Animal' button below.";
 
-        private System.Windows.Forms.MenuItem menuItem1;
 		private System.Windows.Forms.NotifyIcon taskBar;
 
 		private System.Windows.Forms.Timer screenSaverTimer = null;
@@ -135,7 +125,6 @@ namespace Terrarium.Client
 		private System.Windows.Forms.MenuItem menuItemDamage;
 		private System.Windows.Forms.MenuItem menuItemEnergy;
 		private System.Windows.Forms.MenuItem menuItemAbout;
-        private System.Windows.Forms.MenuItem menuItemClearBadPeers;
 		#endregion
 		#region Engine Timing Fields
 		Int64 totalPaintFrameTime = 0;
@@ -171,8 +160,6 @@ namespace Terrarium.Client
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.contextMenu1 = new System.Windows.Forms.ContextMenu();
-            this.menuItemClearBadPeers = new System.Windows.Forms.MenuItem();
-            this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.menuItemAbout = new System.Windows.Forms.MenuItem();
             this.menuItemText = new System.Windows.Forms.MenuItem();
             this.menuItemDamage = new System.Windows.Forms.MenuItem();
@@ -201,24 +188,11 @@ namespace Terrarium.Client
             // contextMenu1
             // 
             this.contextMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-            this.menuItemClearBadPeers,
-            this.menuItem1,
             this.menuItemAbout});
-            // 
-            // menuItemClearBadPeers
-            // 
-            this.menuItemClearBadPeers.Index = 0;
-            this.menuItemClearBadPeers.Text = "Reset Bad Peer List";
-            this.menuItemClearBadPeers.Click += new System.EventHandler(this.menuItemClearBadPeers_Click);
-            // 
-            // menuItem1
-            // 
-            this.menuItem1.Index = 1;
-            this.menuItem1.Text = "-";
             // 
             // menuItemAbout
             // 
-            this.menuItemAbout.Index = 2;
+            this.menuItemAbout.Index = 0;
             this.menuItemAbout.Text = "About Terrarium...";
             this.menuItemAbout.Click += new System.EventHandler(this.menuItemAbout_Click);
             // 
@@ -260,25 +234,20 @@ namespace Terrarium.Client
             this.developerPanel.AnimalCount = 0;
             this.developerPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.developerPanel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.developerPanel.FailedReceives = 0;
-            this.developerPanel.FailedSends = 0;
             this.developerPanel.GameModeText = "XXXXX";
             this.developerPanel.LandSize = new System.Drawing.Size(1600, 1600);
             this.developerPanel.Location = new System.Drawing.Point(0, 32);
             this.developerPanel.MapLocation = new System.Drawing.Point(0, 0);
             this.developerPanel.MaximumAnimalCount = 0;
             this.developerPanel.Name = "developerPanel";
-            this.developerPanel.PeerCount = 0;
             this.developerPanel.PlantCount = 0;
             this.developerPanel.Size = new System.Drawing.Size(200, 453);
             this.developerPanel.TabIndex = 20;
-            this.developerPanel.Teleportations = 0;
-            this.developerPanel.WebRoot = "XXXXX";
+            this.developerPanel.GamePath = "XXXXX";
             // 
             // bottomPanel
             // 
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.bottomPanel.GameMode = Terrarium.Forms.GameModes.Ecosystem;
             this.bottomPanel.Location = new System.Drawing.Point(0, 0);
             this.bottomPanel.Mode = Terrarium.Forms.ScreenSaverMode.ShowSettingsModeless;
             this.bottomPanel.Name = "bottomPanel";
@@ -442,9 +411,6 @@ namespace Terrarium.Client
                                 case "enablelogging":
                                     enableLogging = true;
                                     break;
-                                case "blacklistcheck":
-                                    performBlacklistCheck = true;
-                                    break;
                                 case "skipsplashScreen":
                                     skipSplashScreen = true;
                                     break;
@@ -583,11 +549,6 @@ namespace Terrarium.Client
 						break;
 				}
 
-                if (blacklistCheckOnRestart)
-                {
-                    configLine += "|/blacklistcheck" + configLine;
-                }
-
                 // Let's not display the splash screen on a restart
                 configLine += "|/skipSplashScreen";
 
@@ -643,30 +604,6 @@ namespace Terrarium.Client
 			startAtStartup = start;
 			this.noDirectX = noDirectX;
 
-			// Check to see if this version has been blocked by the server (because of a security issue)
-			// if it has, then don't actually start the game and just wait for
-			// an updated version to get downloaded.
-			if (GameConfig.BlockedVersion.Length != 0)
-			{
-				Version v = null;
-				try
-				{
-					v = new Version(GameConfig.BlockedVersion);
-				}
-				catch (Exception e)
-				{
-					ErrorLog.LogHandledException(e);
-					GameConfig.BlockedVersion = "";
-				}
-
-				if (v != null && v >= Assembly.GetExecutingAssembly().GetName().Version)
-				{
-					// They are running a blocked version
-					runningBlockedVersion = true;
-					startAtStartup = false;
-				}
-			}
-
 			// Load the Glass Style
 			GlassStyleManager.Refresh();
 			GlassStyleManager.SetStyle(GameConfig.StyleName);
@@ -681,8 +618,6 @@ namespace Terrarium.Client
 
 			InitializeScreen();
 
-            this.titleBar.ShowBugButton = false;
-
 			// Post set-up of variables that aren't designed
 
             // Reset the Resize bar so it can detect the MainForm as the root parent
@@ -691,21 +626,16 @@ namespace Terrarium.Client
 
             this.BackColor = GlassStyleManager.Active.DialogColor;
 
-			this.developerPanel.WebRoot = GameConfig.WebRoot;
-
 			this.developerPanel.ViewPortSize = this.tddGameView.Size;
 			
 			this.bottomPanel.Location = new Point(controlStripBottom.Left, controlStripBottom.Top);
 			this.bottomPanel.AddAnimalButton.Click += new EventHandler(this.AddNewAnimal_Click);
 			this.bottomPanel.AddAnimalComboBox.DropDown += new EventHandler(this.AddAnimalComboBox_DropDown);
 			this.bottomPanel.PauseButton.Click += new EventHandler(this.Pause_Click);
-			this.bottomPanel.IntroduceAnimalEcosystemButton.Click += new EventHandler(this.introduceAnimalEcosystem_Click);
 			this.bottomPanel.IntroduceAnimalTerrariumButton.Click += new EventHandler(this.introduceAnimalTerrarium_Click);
-			this.bottomPanel.ReintroduceAnimalButton.Click += new EventHandler(this.reintroduceAnimal_Click);
 			this.bottomPanel.NewTerrariumButton.Click += new EventHandler(this.newTerrarium_Click);
 			this.bottomPanel.LoadTerrariumButton.Click += new EventHandler(this.loadTerrarium_Click);
 			this.developerPanel.NavigatePictureBox.MouseDown += new MouseEventHandler(this.navigatePictureBox_MouseDown);
-			this.bottomPanel.JoinEcosystemButton.Click += new EventHandler(loadEcosystem_Click);
 
 			this.bottomPanel.SettingsButton.Click += new EventHandler(SettingsButton_Click);
 			this.bottomPanel.DetailsButton.Click += new EventHandler(DetailsButton_Click);
@@ -846,78 +776,23 @@ namespace Terrarium.Client
 		{
 			try
 			{
-				if (screenSaverMode != ScreenSaverMode.Run)
-				{
-					if (GameConfig.WebRoot.Length == 0)
-					{
-						ShowPropertiesDialog("Server");
-					}
-
-                    //if (GameConfig.UserEmail.Length == 0)
-                    //{
-                    //    ShowPropertiesDialog("Registration");
-                    //}
-				}
-
 				this.Cursor = Cursors.WaitCursor;
-
-				if (performBlacklistCheck)
-				{
-					// We have been launched and asked to check for blacklisted species before
-					// we start up.  Call the server and ask.
-					SpeciesService service = new SpeciesService();
-					service.Url = GameConfig.WebRoot + "/Species/AddSpecies.asmx";
-					service.Timeout = 60000;
-					string[] blacklist = null;
-					try
-					{
-						blacklist = service.GetBlacklistedSpecies();
-
-						if (blacklist != null)
-						{
-							PrivateAssemblyCache pac = new PrivateAssemblyCache(SpecialUserAppDataPath, ecosystemStateFileName, false, false);
-							pac.BlacklistAssemblies(blacklist);
-						}
-					}
-					catch (Exception e)
-					{
-						Debug.WriteLine("Problem blacklisting animals on startup");
-						ErrorLog.LogHandledException(e);
-					}
-
-					engineStateText += "Terrarium had to sanitize your ecosystem because it contained some bad animals.\r\n";
-				}
 
 				switch (screenSaverMode)
 				{
-					case ScreenSaverMode.NoScreenSaver: // run ecosystem
-						GameEngine.LoadEcosystemGame(SpecialUserAppDataPath, ecosystemStateFileName, developerPanel.Leds);
-						break;
+					case ScreenSaverMode.NoScreenSaver: // run the default terrarium
 					case ScreenSaverMode.Run:  // run the screensaver
-						GameEngine.LoadEcosystemGame(SpecialUserAppDataPath, ecosystemStateFileName, developerPanel.Leds);
+						GameEngine.LoadTerrariumGame(SpecialUserAppDataPath, DefaultTerrariumPath);
 						break;
                     case ScreenSaverMode.RunLoadTerrarium:
-                        GameEngine.LoadTerrariumGame(Path.GetDirectoryName(gamePath), gamePath, developerPanel.Leds);
-                        break;
                     case ScreenSaverMode.RunNewTerrarium:
-                        GameEngine.LoadTerrariumGame(Path.GetDirectoryName(gamePath), gamePath, developerPanel.Leds);
+                        GameEngine.LoadTerrariumGame(Path.GetDirectoryName(gamePath), gamePath);
                         break;
                 }
 			}
-			catch (SocketException e)
-			{
-				ErrorLog.LogHandledException(e);
-				MessageBox.Show("A version of the Terrarium is already running.  If you are connected via Terminal Server you can shut down any instances of Terrarium by using the Task Manager.");
-				Application.Exit();
-			}
 			catch (Exception e)
 			{
-				if (screenSaverMode == ScreenSaverMode.NoScreenSaver || screenSaverMode == ScreenSaverMode.Run)
-				{
-					// Only assert in ecosystem mode because it should never fail
-					Debug.Assert(false, "Problem loading ecosystem: " + e.ToString());
-				}
-
+				ErrorLog.LogHandledException(e);
 				MessageBox.Show(this, "Can't load game: " + e.Message, "Error Loading Game", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 				CloseTerrarium(false);
 				return;
@@ -979,7 +854,7 @@ namespace Terrarium.Client
 			if (GameEngine.Current.Pac.PacOrganismCount > 600 ||
 				GameEngine.Current.Pac.PacSize > 104857600)
 			{
-				LoadEcosystem(null);
+				RelaunchDefaultTerrarium();
 			}
 
 			// Paint the screen
@@ -1037,54 +912,12 @@ namespace Terrarium.Client
 			{
 				turnFinished = GameEngine.Current.ProcessTurn();
 			}
-			catch (InvalidPeerException ipe)
-			{
-				timer1.Enabled = false;
-				MessageBox.Show(this, ipe.Message, "Can't run EcoSystem", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-				CloseTerrarium(false);
-				return;
-			}
 			catch (MaliciousOrganismException)
 			{
 				timer1.Enabled = false;
 				relaunch = true;
 				maliciousOrganism = true;
 				this.Close();
-				return;
-			}
-			catch (ShutdownFailureException)
-			{
-				// This version of the game has been marked as bad
-				timer1.Enabled = false;
-				GameConfig.BlockedVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-				runningBlockedVersion = true;
-				relaunch = true;
-				this.Close();
-				return;
-			}
-			catch (OrganismBlacklistException)
-			{
-				// Reload the ecosystem but blacklist on startup
-				blacklistCheckOnRestart = true;
-				LoadEcosystem(null);
-				return;
-			}
-			catch (StateTimedOutException)
-			{
-				// our state has been timed out -- need to create a new ecosystem
-				timer1.Enabled = false;
-				MessageBox.Show(this, "Your animals have all died since you haven't run Terrarium for a long time.  Starting fresh.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-				CloseTerrarium(false);
-				LoadEcosystem(SpecialUserAppDataPath + ecosystemStateFileName);
-				return;
-			}
-			catch (StateCorruptedException corruptedException)
-			{
-				// our state is corrupted, probably because the app was killed and we're reporting duplicate data -- need to create a new ecosystem
-				timer1.Enabled = false;
-				MessageBox.Show(this, "Your part of the ecosystem is messed up. Starting fresh. [Last Reported Tick = " + corruptedException.LastReportedTick + "]", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-				CloseTerrarium(false);
-				LoadEcosystem(SpecialUserAppDataPath + ecosystemStateFileName);
 				return;
 			}
 
@@ -1199,12 +1032,6 @@ namespace Terrarium.Client
 			}
 		}
 
-		private void menuItemClearBadPeers_Click(object sender, System.EventArgs e)
-		{
-			GameEngine.Current.NetworkEngine.PeerManager.ClearBadPeers();
-			MessageBox.Show(this, "Cleared the list of peers that were thought to be invalid.  Everyone is valid again.");
-		}
-
 		private void menuItemPeerProperties_Click(object sender, System.EventArgs e)
 		{
 			ShowPropertiesDialog(null);
@@ -1221,12 +1048,6 @@ namespace Terrarium.Client
 			peerForm.ShowDialog(this);
 
 			tddGameView.DrawBackgroundGrid = GameConfig.BackgroundGrid;
-
-			// Web Root might have changed.
-			if (panel == "Server")
-			{
-				this.developerPanel.WebRoot = GameConfig.WebRoot;
-			}
 			this.Invalidate(true);
 		}
 
@@ -1285,39 +1106,9 @@ namespace Terrarium.Client
 
                 string path;
 
-                //if (UpdateManager.IsDeployed)
-                //{
-                //    path = Application.UserAppDataPath;
-                //}
-                //else
-                //{
-                    path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                    path = Path.Combine(path, "Terrarium");
-                    path = Path.Combine(path, PrivateAssemblyCache.VersionedDirectoryPreamble);
-                //}
-                         
-				if (GameConfig.WebRoot == null || GameConfig.WebRoot.Length == 0)
-				{
-					GameConfig.WebRoot = "http://www.terrariumgame.net/terrarium";
-				}
-
-                Uri serverUrl = new Uri(GameConfig.WebRoot);
-
-                string segments = serverUrl.AbsolutePath.Replace('/', '\\');
-                segments = segments.TrimStart('\\');
-                segments = segments.TrimEnd('\\');
-
-                path = Path.Combine(path, serverUrl.Host);
-                path = Path.Combine(path, segments);
-
-                //if (GameConfig.WebRoot.Substring(0, 5).ToLower(CultureInfo.InvariantCulture) == "http:")
-                //{
-                //    path = Path.Combine(path, HttpUtility.UrlEncode(GameConfig.WebRoot.Substring(5)));
-                //}
-                //else
-                //{
-                //    path = Path.Combine(path, HttpUtility.UrlEncode(GameConfig.WebRoot));
-                //}
+                path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                path = Path.Combine(path, "Terrarium");
+                path = Path.Combine(path, PrivateAssemblyCache.VersionedDirectoryPreamble);
 
 				// Get rid of all % strings because they can sometimes get unencoded and cause us to load files
 				// improperly 
@@ -1332,24 +1123,32 @@ namespace Terrarium.Client
 			}
 		}
 
-		private void loadEcosystem_Click(object sender, System.EventArgs args)
+		// The default terrarium's save file
+		internal static string DefaultTerrariumPath
 		{
-			LoadEcosystem(null);
+			get
+			{
+				return Path.Combine(SpecialUserAppDataPath, defaultTerrariumFileName);
+			}
 		}
 
-		private void LoadEcosystem(string pathToDelete)
+		// True when the current game is the default terrarium, which is always saved on exit
+		private static bool IsDefaultTerrarium
+		{
+			get
+			{
+				return GameEngine.Current != null &&
+					string.Equals(GameEngine.Current.FileName, DefaultTerrariumPath, StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		private void RelaunchDefaultTerrarium()
 		{
 			if (CloseTerrarium())
 			{
 				this.Hide();
 
-				// Delete the old ecosystem if asked to
-				if (pathToDelete != null)
-				{
-					File.Delete(pathToDelete);
-				}
-
-                // We want to run in "normal" or Ecosystem mode
+                // Relaunch into the default terrarium
                 this.screenSaverMode = ScreenSaverMode.NoScreenSaver;
 
 				relaunch = true;
@@ -1450,26 +1249,16 @@ namespace Terrarium.Client
 				GameEngine.Current.Pac.LastRun = "";
 			}
 
-			if (GameEngine.Current.EcosystemMode == true)
+			this.developerPanel.GameModeText = "Terrarium";
+			bottomPanel.Mode = screenSaverMode;
+
+			if (GameEngine.Current.FileName.Length == 0)
 			{
-				this.developerPanel.GameModeText = "Ecosystem";
-				developerPanel.WebRoot = GameConfig.WebRoot;
-				bottomPanel.GameMode = GameModes.Ecosystem;
-				bottomPanel.Mode = screenSaverMode;
+				developerPanel.GamePath = "[New Terrarium]";
 			}
 			else
 			{
-				this.developerPanel.GameModeText = "Terrarium";
-                this.bottomPanel.GameMode = GameModes.Terrarium;
-
-				if (GameEngine.Current.FileName.Length == 0)
-				{
-					developerPanel.WebRoot = "[New Terrarium]";
-				}
-				else
-				{
-					developerPanel.WebRoot = GameEngine.Current.FileName;
-				}
+				developerPanel.GamePath = GameEngine.Current.FileName;
 			}
 
 			GameEngine.Current.WorldVectorChanged += new WorldVectorChangedEventHandler(WorldVectorChanged);
@@ -1560,10 +1349,9 @@ namespace Terrarium.Client
 			}
 			else if (GameEngine.Current != null)
 			{
-				// If we are shutting down because they are running a blocked version, we always save
-				if (GameEngine.Current.EcosystemMode == true || runningBlockedVersion)
+				if (IsDefaultTerrarium)
 				{
-					// Always save Ecosystem mode games
+					// Always save the default terrarium
 					GameEngine.Current.StopGame(true);
 				}
 				else
@@ -1676,25 +1464,6 @@ namespace Terrarium.Client
 				return;
 			}
 
-			this.Cursor = Cursors.WaitCursor;
-			ReintroduceSpecies species = new ReintroduceSpecies(false);
-			species.ShowDialog();
-			this.Cursor = Cursors.Default;
-		}
-
-		private void introduceAnimalEcosystem_Click(object sender, System.EventArgs e)
-		{
-			if (screenSaverMode == ScreenSaverMode.Run)
-			{
-				MessageBox.Show(
-					this,
-					"This isn't permitted while running in screensaver mode because it could allow someone to get access to your machine when it is locked.  Try closing and starting the Terrarium normally to do this.",
-					"Operation Not Permitted",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Exclamation);
-				return;
-			}
-
 			String assemblyName;
 			if (openFileDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 			{
@@ -1706,6 +1475,14 @@ namespace Terrarium.Client
 					if (GameEngine.Current != null)
 					{
 						newSpecies = GameEngine.Current.AddNewOrganism(assemblyName, Point.Empty, false);
+						if (newSpecies != null)
+						{
+							string warnings = newSpecies.GetAttributeWarnings();
+							if (warnings.Length != 0)
+							{
+								MessageBox.Show(this, "Your organism was introduced, but there were some warnings:\r\n" + warnings, "Organism Assembly Warnings");
+							}
+						}
 					}
 				}
 				catch (TargetInvocationException exception)
@@ -1717,27 +1494,16 @@ namespace Terrarium.Client
 					}
 
 					MessageBox.Show(this, innerException.Message, "Error Loading Assembly", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
 				}
 				catch (GameEngineException exception)
 				{
 					MessageBox.Show(this, exception.Message, "Error Loading Assembly", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
 				}
 				catch (IOException exception)
 				{
 					MessageBox.Show(this, exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
 				}
 			}
-		}
-
-		private void reintroduceAnimal_Click(object sender, System.EventArgs e)
-		{
-			this.Cursor = Cursors.WaitCursor;
-			ReintroduceSpecies species = new ReintroduceSpecies(true);
-			species.ShowDialog();
-			this.Cursor = Cursors.Default;
 		}
 
 		private void Pause_Click(object sender, System.EventArgs e)
@@ -1770,47 +1536,17 @@ namespace Terrarium.Client
 			{
 				if (e.NewVector.State.Organisms.Count < 1)
 				{
-					if (GameEngine.Current != null && GameEngine.Current.EcosystemMode)
-					{
-						if (developerPanel.Leds[(int)LedIndicators.DiscoveryWebService].LedState == LedStates.Failed ||
-							developerPanel.Leds[(int)LedIndicators.ReportWebService].LedState == LedStates.Failed)
-						{
-							tddGameView.TerrariumMessage = emptyEcosystemServerDownMessage;
-						}
-						else
-						{
-							tddGameView.TerrariumMessage = emptyEcosystemMessage;
-						}
-					}
-					else
-					{
-						tddGameView.TerrariumMessage = emptyTerrariumMessage;
-					}
+					tddGameView.TerrariumMessage = emptyTerrariumMessage;
 				}
 				else
 				{
 					// Only clear our messages, not those set by someone else
-					if (tddGameView.TerrariumMessage == emptyEcosystemMessage || tddGameView.TerrariumMessage == emptyTerrariumMessage)
+					if (tddGameView.TerrariumMessage == emptyTerrariumMessage)
 					{
 						tddGameView.TerrariumMessage = null;
 					}
 				}
 
-				// If the network has a problem, always override the message with this
-				if (GameEngine.Current != null && GameEngine.Current.NetworkEngine != null)
-				{
-					if (GameEngine.Current.NetworkEngine.NetworkStatusMessage.Length != 0)
-					{
-						tddGameView.TerrariumMessage = GameEngine.Current.NetworkEngine.NetworkStatusMessage;
-					}
-					else
-					{
-						if (tddGameView.TerrariumMessage == NetworkEngine.NetworkBehindNatMessage)
-						{
-							tddGameView.TerrariumMessage = null;
-						}
-					}
-				}
 			}
 
 			// Tell the tracewindow that we've got a new tick
@@ -1821,31 +1557,11 @@ namespace Terrarium.Client
 
 			this.developerPanel.AnimalCount = GameEngine.Current.AnimalCount;
 			this.developerPanel.MaximumAnimalCount = GameEngine.Current.MaxAnimals;
-			this.developerPanel.PeerCount = GameEngine.Current.PeerCount;
-
-			if (GameEngine.Current.EcosystemMode == true)
-			{
-				//this.taskBar.Text = GameConfig.WebRoot;
-			}
-			else
-			{
-				//this.taskBar.Text = GameEngine.Current.FileName;
-			}
+			this.developerPanel.PlantCount = GameEngine.Current.PlantCount;
 
 			this.taskBar.Text = "Terrarium";
 
-			this.taskBar.Text += "\r\nPopulation: " + GameEngine.Current.AnimalCount + "/" + GameEngine.Current.MaxAnimals + "\r\nPeers: " + GameEngine.Current.PeerCount;
-
-			try
-			{
-                if (GameEngine.Current.IsNetworkEnabled == true)
-                {
-                    developerPanel.Teleportations = GameEngine.Current.NetworkEngine.Teleportations;
-                    developerPanel.FailedSends = GameEngine.Current.NetworkEngine.FailedTeleportationSends;
-                    developerPanel.FailedReceives = GameEngine.Current.NetworkEngine.FailedTeleportationReceives;
-                }
-			}
-			catch { }
+			this.taskBar.Text += "\r\nPopulation: " + GameEngine.Current.AnimalCount + "/" + GameEngine.Current.MaxAnimals;
 
 			if (engineStateText != null && engineStateText.Length != 0)
 			{

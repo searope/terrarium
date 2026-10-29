@@ -2,11 +2,8 @@ using System;
 using System.Data;
 using System.Diagnostics;
 using System.Globalization;
-using System.Web.Services.Protocols;
 using OrganismBase;
 using Terrarium.Configuration;
-using Terrarium.Forms;
-using Terrarium.Services.Reporting;
 using Terrarium.Tools;
 
 namespace Terrarium.Game
@@ -15,78 +12,28 @@ namespace Terrarium.Game
     ///  Represents the population state of a Terrarium by handling
     ///  all game events that lead to adding or removing creatures
     ///  from the system.  Also handles all population change reasons
-    ///  to give per reason reporting.
+    ///  to give per reason statistics.
     /// </summary>
     [Serializable]
     public class PopulationData
     {
         private const int TicksToReport = 600; // 2 ticks per second * 60 seconds * 5 minutes
-        private readonly bool _reportDataToServer = true;
         private int _currentTick = -1;
         private DataSet _data;
         private bool _firstTick = true;
-        private int _lastReportedTick = -1; // used only for debugging
-        [NonSerialized] private TerrariumLed _led;
-
-        private bool _nodeCorrupted;
-        private bool _organismBlacklisted;
         private DataSet _peerTotalsData;
-
-        [NonSerialized] private WebClientAsyncResult _pendingAsyncResult;
         private DataTable _populationChangeTable; // One row per species, current population, min and max
-
-        [NonSerialized] private ReportingService _reportingService;
         private bool _reportNow;
         private DataTable _tickTable; // One row per species, current population, min and max
-        private bool _timedOut;
 
         private DataTable _totalsTable; // One row per tick, One row per species, current population, min and max
 
         /// <summary>
-        ///  Creates a new PopulationData class that can be used to report data and
-        ///  update a status LED.
+        ///  Creates a new PopulationData class that collects population statistics.
         /// </summary>
-        /// <param name="reportData">Should data be reported to the server.</param>
-        /// <param name="led">An LED used to indicate status.</param>
-        public PopulationData(bool reportData, TerrariumLed led)
+        public PopulationData()
         {
-            _reportDataToServer = reportData;
-            _led = led;
             ResetData();
-        }
-
-        /// <summary>
-        ///  Remebers the last tick that data was reported to the server.
-        /// </summary>
-        public int LastReportedTick
-        {
-            get { return _lastReportedTick; }
-        }
-
-        /// <summary>
-        ///  Initializes the web service proxies.  These are dynamically generated and so
-        ///  this method only generates them one time to improve memory and performance.
-        /// </summary>
-        public void InitWebService()
-        {
-            if (_reportingService != null) return;
-            _reportingService = new ReportingService
-                                    {
-                                        Url = (GameConfig.WebRoot + "/reporting/reportpopulation.asmx"),
-                                        Timeout = 60000
-                                    };
-        }
-
-        /// <summary>
-        ///  Closes the PopulationData class and stops in any progress or pending
-        ///  connections.
-        /// </summary>
-        public void Close()
-        {
-            if (_pendingAsyncResult != null)
-            {
-                _pendingAsyncResult.Abort();
-            }
         }
 
         /// <summary>
@@ -148,33 +95,13 @@ namespace Terrarium.Game
         {
             Debug.Assert(_currentTick == -1, "End Tick not called");
 
-            // The last time we updated the server it may have told us that
-            // we were timed out or corrupted or that organisms were blacklisted.
-            // Report those errors here so that they are easier to handle.
-            if (_timedOut)
-            {
-                throw new StateTimedOutException();
-            }
-
-            if (_nodeCorrupted)
-            {
-                throw new StateCorruptedException(_lastReportedTick);
-            }
-
-            if (_organismBlacklisted)
-            {
-                // Make sure we don't throw again on shutdown
-                _organismBlacklisted = false;
-                throw new OrganismBlacklistException();
-            }
-
             var resetData = false;
             DataSet reportData;
             DataTable reportTable = null;
 
             _currentTick = tickNumber;
 
-            // Every TicksToReport ticks (skipping tick 0), we report data to the server
+            // Every TicksToReport ticks (skipping tick 0), we roll the data up into the totals
             if (IsReportingTick(tickNumber))
             {
                 _reportNow = false;
@@ -182,16 +109,6 @@ namespace Terrarium.Game
                 reportTable = reportData.Tables["History"];
                 FillReportTable(reportTable, guid, _currentTick);
                 AddToTotals(ref _peerTotalsData, reportData);
-
-                if (_reportDataToServer)
-                {
-                    ReportData(reportData, guid);
-                    _lastReportedTick = _currentTick;
-                }
-                else
-                {
-                    _lastReportedTick = -1;
-                }
 
                 // Reset the data and start over with current populations
                 ResetData();
@@ -202,7 +119,7 @@ namespace Terrarium.Game
             newRow["Number"] = tickNumber;
             _tickTable.Rows.Add(newRow);
 
-            // If we've sent the data to the server, reseed the new dataset with whatever the current 
+            // If we've rolled up the data, reseed the new dataset with whatever the current 
             // population was from the previous dataset so we start with the correct count.
             if (!resetData) return;
             foreach (DataRow row in reportTable.Rows)
@@ -243,108 +160,6 @@ namespace Terrarium.Game
             newData.Tables[0].DefaultView.AllowNew = false;
             newData.Tables[0].DefaultView.AllowEdit = false;
             return newData;
-        }
-
-        /// <summary>
-        ///  Attemps to report data to the central server.
-        /// </summary>
-        /// <param name="newData">The data to be reported.</param>
-        /// <param name="peerStateGuid">The peer's state GUID.</param>
-        private void ReportData(DataSet newData, Guid peerStateGuid)
-        {
-            // If we're using the config file for discovery, don't do any reporting
-            if (GameConfig.UseConfigForDiscovery)
-            {
-                return;
-            }
-
-            if (_pendingAsyncResult != null) return;
-            var allData = new DataSet {Locale = CultureInfo.InvariantCulture};
-
-            allData.Merge(newData);
-
-            for (var i = (allData.Tables["History"].Rows.Count - 1); i >= 0; i--)
-            {
-                if (((int) allData.Tables["History"].Rows[i]["OrganismBlacklistedCount"]) > 0)
-                {
-                    allData.Tables["History"].Rows.RemoveAt(i);
-                }
-            }
-
-            InitWebService();
-
-            if (_led != null)
-            {
-                _led.LedState = LedStates.Waiting;
-            }
-            _pendingAsyncResult =
-                (WebClientAsyncResult) _reportingService.BeginReportPopulation(allData, peerStateGuid, _currentTick,
-                                                                               ReportServiceCallback,
-                                                                               allData);
-
-            // This is needed because if it completes synchronously, pendingAsyncResult is cleared in the
-            // callback, and then it gets set *afterward* which we don't want since it's already done.
-            if (_pendingAsyncResult.CompletedSynchronously)
-            {
-                _pendingAsyncResult = null;
-            }
-        }
-
-        /// <summary>
-        ///  Callback method used by the reporting service methods to enable
-        ///  Async reporting.
-        /// </summary>
-        /// <param name="asyncResult">The results of the method.</param>
-        private void ReportServiceCallback(IAsyncResult asyncResult)
-        {
-            try
-            {
-                var resultCode = _reportingService.EndReportPopulation(asyncResult);
-
-                switch (resultCode)
-                {
-                    case 3:
-                        _timedOut = true;
-                        break;
-                    case 4:
-                        _nodeCorrupted = true;
-                        break;
-                    case 5:
-                        _organismBlacklisted = true;
-                        break;
-                    default:
-                        if (resultCode != 0)
-                        {
-                        }
-                        break;
-                }
-
-                if (_led != null)
-                {
-                    _led.LedState = LedStates.Idle;
-                }
-            }
-            catch (SoapException e)
-            {
-                ErrorLog.LogHandledException(e);
-                if (_led != null)
-                {
-                    _led.LedState = LedStates.Failed;
-                }
-            }
-            catch (Exception e)
-            {
-                ErrorLog.LogHandledException(e);
-
-                if (_led != null)
-                {
-                    _led.LedState = LedStates.Failed;
-                }
-            }
-            finally
-            {
-                _pendingAsyncResult = null;
-            }
         }
 
         /// <summary>

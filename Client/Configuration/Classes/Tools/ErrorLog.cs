@@ -3,30 +3,20 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Threading;
 using Terrarium.Configuration;
 
 namespace Terrarium.Tools
 {
     /// <summary>
-    ///  Centralized logging class for loggin handle/unhandled exceptions.  This class
-    ///  caches various calls in order to generate a dataset when a fatal error occurs.
-    ///  This dataset is then formatted and sent to the Terrarium Watson Service.
+    ///  Centralized logging class for handled exceptions and failed assertions.
+    ///  Everything is written to the trace log.
     /// </summary>
     /// <threadsafe />
     public class ErrorLog
     {
-        /// <summary>
-        ///  A Mutex object used to make the ErrorLog class threadsafe and to synchronize
-        ///  access to certain methods and resources.
-        /// </summary>
-        private static readonly Mutex _syncObject = new Mutex(false);
-
         /// <summary>
         ///  The name of the machine the client is running on
         /// </summary>
@@ -79,40 +69,21 @@ namespace Terrarium.Tools
         }
 
         /// <summary>
-        ///  Logs a failed assertion.  Any failed assertions launch the Watson
-        ///  dialog which is then used to submit an error report to the Terrarium
-        ///  Watson Service.
+        ///  Logs a failed assertion to the trace log.
         /// </summary>
         /// <param name="message">Message for the assertion</param>
         /// <param name="traces">A series of cached previous tracings</param>
         public static void LogFailedAssertion(string message, string traces)
         {
-            _syncObject.WaitOne();
-
-            try
+            Trace.WriteLine("Failed assertion: " + message);
+            if (!string.IsNullOrEmpty(traces))
             {
-                if (!GameConfig.ShowErrors)
-                {
-                    Debug.WriteLine("Not showing watson dialog since ShowErrors == false");
-                    return;
-                }
-            }
-            catch (Exception exception)
-            {
-                // Catch all exceptions because we don't want the user to get into an infinite loop
-                // and if the website is down, we'll just throw away the data
-                LogHandledException(exception);
-            }
-            finally
-            {
-                _syncObject.ReleaseMutex();
+                Trace.WriteLine(traces);
             }
         }
 
         /// <summary>
-        ///  Logs a failed assertion.  Any failed assertions launch the Watson
-        ///  dialog which is then used to submit an error report to the Terrarium
-        ///  Watson Service.
+        ///  Logs a failed assertion to the trace log.
         /// </summary>
         /// <param name="message">Message for the assertion</param>
         public static void LogFailedAssertion(string message)
@@ -120,42 +91,5 @@ namespace Terrarium.Tools
             LogFailedAssertion(message, "");
         }
 
-        /// <summary>
-        ///  Creates an error dataset to be reported to the Terrarium Watson Service.
-        ///  Each dataset has information about the machine, the OS, the version of
-        ///  the game, the type of log, and optionally some an email and user comment.
-        /// </summary>
-        /// <param name="logType">The type of log Assertion or Unhandled Exception generally.</param>
-        /// <param name="errorLog">The error log text, generally a compilation of the exception and previous tracings.</param>
-        /// <returns>A Watson Service DataSet that can be used in a web service call.</returns>
-        public static DataSet CreateErrorLogDataSet(string logType, string errorLog)
-        {
-            var data = new DataSet {Locale = CultureInfo.InvariantCulture};
-
-            var watsonTable = data.Tables.Add("Watson");
-            watsonTable.Columns.Add("LogType", typeof (String));
-            watsonTable.Columns.Add("OSVersion", typeof (String));
-            watsonTable.Columns.Add("GameVersion", typeof (String));
-            watsonTable.Columns.Add("CLRVersion", typeof (String));
-            watsonTable.Columns.Add("UserEmail", typeof (String));
-            
-            var dcComment = new DataColumn("UserComment", typeof (String)) {MaxLength = Int32.MaxValue};
-            watsonTable.Columns.Add(dcComment);
-            
-            var dcErrorLog = new DataColumn("ErrorLog", typeof (String)) {MaxLength = Int32.MaxValue};
-            watsonTable.Columns.Add(dcErrorLog);
-
-            var row = watsonTable.NewRow();
-            row["LogType"] = logType;
-            row["ErrorLog"] = errorLog;
-            row["OSVersion"] = Environment.OSVersion;
-            row["UserEmail"] = "";
-            row["UserComment"] = "";
-            row["GameVersion"] = Assembly.GetExecutingAssembly().GetName().Version;
-            row["CLRVersion"] = Environment.Version;
-            watsonTable.Rows.Add(row);
-
-            return data;
-        }
     }
 }

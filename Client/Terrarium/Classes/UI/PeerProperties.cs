@@ -9,7 +9,6 @@ using System.Windows.Forms;
 using Terrarium.Configuration;
 using Terrarium.Tools;
 using Terrarium.Forms;
-using Terrarium.Services.Discovery;
 
 using Terrarium.Glass;
 
@@ -37,18 +36,9 @@ namespace Terrarium.Client
 		private Terrarium.Glass.GlassPanel performancePanel;
 		private Terrarium.Glass.GlassButton graphicsButton;
 		private Terrarium.Glass.GlassButton performanceButton;
-		private Terrarium.Glass.GlassButton serverButton;
 		private Terrarium.Glass.GlassLabel GlassLabel1;
 		private Terrarium.Glass.GlassLabel GlassLabel2;
 		private Terrarium.Glass.GlassLabel GlassLabel3;
-		private GlassPanel serverPanel;
-		private GlassLabel GlassLabel5;
-		private TextBox txtPeerChannel;
-		private GlassLabel lblServerDescription;
-		private GlassLabel lblServerURI;
-		private TextBox txtServerURI;
-		private GlassLabel lblServerEnableNat;
-		private CheckBox chkServerEnableNat;
 		private GlassPanel graphicsPanel;
 		private CheckBox chkStartFullscreen;
 		private GlassLabel GlassLabel6;
@@ -80,7 +70,7 @@ namespace Terrarium.Client
 			this.titleBar.ShowMinimizeButton = false;
 
 			this.BackColor = GlassStyleManager.Active.DialogColor;
-			this.serverButton_Click( this, new EventArgs() );
+			this.graphicsButton_Click( this, new EventArgs() );
 
 		}
 
@@ -111,7 +101,6 @@ namespace Terrarium.Client
 			this.okButton = new Terrarium.Glass.GlassButton();
 			this.graphicsButton = new Terrarium.Glass.GlassButton();
 			this.performanceButton = new Terrarium.Glass.GlassButton();
-			this.serverButton = new Terrarium.Glass.GlassButton();
 			this.performancePanel = new Terrarium.Glass.GlassPanel();
 			this.GlassLabel3 = new Terrarium.Glass.GlassLabel();
 			this.GlassLabel2 = new Terrarium.Glass.GlassLabel();
@@ -124,14 +113,6 @@ namespace Terrarium.Client
 			this.radPerformanceNoLogging = new System.Windows.Forms.RadioButton();
 			this.radPerformanceSelectedLogging = new System.Windows.Forms.RadioButton();
 			this.radPerformanceAllLogging = new System.Windows.Forms.RadioButton();
-			this.serverPanel = new Terrarium.Glass.GlassPanel();
-			this.GlassLabel5 = new Terrarium.Glass.GlassLabel();
-			this.txtPeerChannel = new System.Windows.Forms.TextBox();
-			this.lblServerDescription = new Terrarium.Glass.GlassLabel();
-			this.lblServerURI = new Terrarium.Glass.GlassLabel();
-			this.txtServerURI = new System.Windows.Forms.TextBox();
-			this.lblServerEnableNat = new Terrarium.Glass.GlassLabel();
-			this.chkServerEnableNat = new System.Windows.Forms.CheckBox();
 			this.graphicsPanel = new Terrarium.Glass.GlassPanel();
 			this.chkStartFullscreen = new System.Windows.Forms.CheckBox();
 			this.GlassLabel6 = new Terrarium.Glass.GlassLabel();
@@ -149,7 +130,6 @@ namespace Terrarium.Client
 			this.bottomPanel.SuspendLayout();
 			this.performancePanel.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.tbrPerformanceSlider)).BeginInit();
-			this.serverPanel.SuspendLayout();
 			this.graphicsPanel.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -248,7 +228,7 @@ namespace Terrarium.Client
 			this.graphicsButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
 			this.graphicsButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
 			this.graphicsButton.IsGlass = true;
-			this.graphicsButton.Location = new System.Drawing.Point(91, 63);
+			this.graphicsButton.Location = new System.Drawing.Point(13, 63);
 			this.graphicsButton.Name = "graphicsButton";
 			this.graphicsButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
 			this.graphicsButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
@@ -278,7 +258,7 @@ namespace Terrarium.Client
 			this.performanceButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
 			this.performanceButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
 			this.performanceButton.IsGlass = true;
-			this.performanceButton.Location = new System.Drawing.Point(183, 63);
+			this.performanceButton.Location = new System.Drawing.Point(105, 63);
 			this.performanceButton.Name = "performanceButton";
 			this.performanceButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
 			this.performanceButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
@@ -292,36 +272,6 @@ namespace Terrarium.Client
 			this.performanceButton.UseStyles = true;
 			this.performanceButton.UseVisualStyleBackColor = false;
 			this.performanceButton.Click += new System.EventHandler(this.performanceButton_Click);
-			// 
-			// serverButton
-			// 
-			this.serverButton.BackColor = System.Drawing.Color.Transparent;
-			this.serverButton.BorderColor = System.Drawing.Color.Black;
-			this.serverButton.Depth = 3;
-			this.serverButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-			this.serverButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-			this.serverButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.serverButton.ForeColor = System.Drawing.Color.White;
-			this.serverButton.Highlight = false;
-			this.serverButton.HighlightGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-			this.serverButton.HighlightGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-			this.serverButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-			this.serverButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-			this.serverButton.IsGlass = true;
-			this.serverButton.Location = new System.Drawing.Point(13, 63);
-			this.serverButton.Name = "serverButton";
-			this.serverButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-			this.serverButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-			this.serverButton.PressedGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-			this.serverButton.PressedGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-			this.serverButton.Size = new System.Drawing.Size(76, 52);
-			this.serverButton.TabIndex = 23;
-			this.serverButton.TabStop = false;
-			this.serverButton.Text = "Server";
-			this.serverButton.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-			this.serverButton.UseStyles = true;
-			this.serverButton.UseVisualStyleBackColor = false;
-			this.serverButton.Click += new System.EventHandler(this.serverButton_Click);
 			// 
 			// performancePanel
 			// 
@@ -492,114 +442,6 @@ namespace Terrarium.Client
 			this.radPerformanceAllLogging.TabIndex = 21;
 			this.radPerformanceAllLogging.TextAlign = System.Drawing.ContentAlignment.TopLeft;
 			this.radPerformanceAllLogging.UseVisualStyleBackColor = false;
-			// 
-			// serverPanel
-			// 
-			this.serverPanel.Borders = ((Terrarium.Glass.GlassBorders)((((Terrarium.Glass.GlassBorders.Left | Terrarium.Glass.GlassBorders.Top)
-						| Terrarium.Glass.GlassBorders.Right)
-						| Terrarium.Glass.GlassBorders.Bottom)));
-			this.serverPanel.Controls.Add(this.GlassLabel5);
-			this.serverPanel.Controls.Add(this.txtPeerChannel);
-			this.serverPanel.Controls.Add(this.lblServerDescription);
-			this.serverPanel.Controls.Add(this.lblServerURI);
-			this.serverPanel.Controls.Add(this.txtServerURI);
-			this.serverPanel.Controls.Add(this.lblServerEnableNat);
-			this.serverPanel.Controls.Add(this.chkServerEnableNat);
-			this.serverPanel.Gradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-			this.serverPanel.Gradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-			this.serverPanel.IsGlass = true;
-			this.serverPanel.IsSunk = false;
-			this.serverPanel.Location = new System.Drawing.Point(13, 87);
-			this.serverPanel.Name = "serverPanel";
-			this.serverPanel.Size = new System.Drawing.Size(384, 272);
-			this.serverPanel.TabIndex = 29;
-			this.serverPanel.UseStyles = true;
-			// 
-			// GlassLabel5
-			// 
-			this.GlassLabel5.BackColor = System.Drawing.Color.Transparent;
-			this.GlassLabel5.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.GlassLabel5.ForeColor = System.Drawing.Color.White;
-			this.GlassLabel5.Location = new System.Drawing.Point(8, 161);
-			this.GlassLabel5.Name = "GlassLabel5";
-			this.GlassLabel5.NoWrap = false;
-			this.GlassLabel5.Size = new System.Drawing.Size(104, 16);
-			this.GlassLabel5.TabIndex = 14;
-			this.GlassLabel5.Text = "Peer Channel:";
-			this.GlassLabel5.TextAlign = System.Drawing.ContentAlignment.TopRight;
-			// 
-			// txtPeerChannel
-			// 
-			this.txtPeerChannel.BackColor = System.Drawing.SystemColors.Window;
-			this.txtPeerChannel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.txtPeerChannel.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.txtPeerChannel.ForeColor = System.Drawing.SystemColors.ControlText;
-			this.txtPeerChannel.Location = new System.Drawing.Point(112, 160);
-			this.txtPeerChannel.Name = "txtPeerChannel";
-			this.txtPeerChannel.Size = new System.Drawing.Size(240, 18);
-			this.txtPeerChannel.TabIndex = 15;
-			// 
-			// lblServerDescription
-			// 
-			this.lblServerDescription.BackColor = System.Drawing.Color.Transparent;
-			this.lblServerDescription.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblServerDescription.ForeColor = System.Drawing.Color.White;
-			this.lblServerDescription.Location = new System.Drawing.Point(16, 16);
-			this.lblServerDescription.Name = "lblServerDescription";
-			this.lblServerDescription.NoWrap = false;
-			this.lblServerDescription.Size = new System.Drawing.Size(360, 80);
-			this.lblServerDescription.TabIndex = 10;
-			this.lblServerDescription.Text = "The Terrarium gaming client can be pointed at an alternate Terrarium server.  Fee" +
-				"l free to change your game to another server.";
-			// 
-			// lblServerURI
-			// 
-			this.lblServerURI.BackColor = System.Drawing.Color.Transparent;
-			this.lblServerURI.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblServerURI.ForeColor = System.Drawing.Color.White;
-			this.lblServerURI.Location = new System.Drawing.Point(6, 129);
-			this.lblServerURI.Name = "lblServerURI";
-			this.lblServerURI.NoWrap = false;
-			this.lblServerURI.Size = new System.Drawing.Size(104, 16);
-			this.lblServerURI.TabIndex = 9;
-			this.lblServerURI.Text = "Server URL:";
-			this.lblServerURI.TextAlign = System.Drawing.ContentAlignment.TopRight;
-			// 
-			// txtServerURI
-			// 
-			this.txtServerURI.BackColor = System.Drawing.SystemColors.Window;
-			this.txtServerURI.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.txtServerURI.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.txtServerURI.ForeColor = System.Drawing.SystemColors.ControlText;
-			this.txtServerURI.Location = new System.Drawing.Point(112, 128);
-			this.txtServerURI.Name = "txtServerURI";
-			this.txtServerURI.Size = new System.Drawing.Size(240, 18);
-			this.txtServerURI.TabIndex = 11;
-			// 
-			// lblServerEnableNat
-			// 
-			this.lblServerEnableNat.BackColor = System.Drawing.Color.Transparent;
-			this.lblServerEnableNat.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblServerEnableNat.ForeColor = System.Drawing.Color.White;
-			this.lblServerEnableNat.Location = new System.Drawing.Point(104, 208);
-			this.lblServerEnableNat.Name = "lblServerEnableNat";
-			this.lblServerEnableNat.NoWrap = false;
-			this.lblServerEnableNat.Size = new System.Drawing.Size(160, 16);
-			this.lblServerEnableNat.TabIndex = 12;
-			this.lblServerEnableNat.Text = "Enable Nat/Firewall Support";
-			this.lblServerEnableNat.TextAlign = System.Drawing.ContentAlignment.TopRight;
-			// 
-			// chkServerEnableNat
-			// 
-			this.chkServerEnableNat.BackColor = System.Drawing.Color.Transparent;
-			this.chkServerEnableNat.CheckAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			this.chkServerEnableNat.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			this.chkServerEnableNat.ForeColor = System.Drawing.SystemColors.ControlText;
-			this.chkServerEnableNat.Location = new System.Drawing.Point(264, 208);
-			this.chkServerEnableNat.Name = "chkServerEnableNat";
-			this.chkServerEnableNat.Size = new System.Drawing.Size(13, 13);
-			this.chkServerEnableNat.TabIndex = 13;
-			this.chkServerEnableNat.UseVisualStyleBackColor = false;
 			// 
 			// graphicsPanel
 			// 
@@ -795,9 +637,7 @@ namespace Terrarium.Client
 			this.BackColor = System.Drawing.Color.Magenta;
 			this.ClientSize = new System.Drawing.Size(409, 414);
 			this.Controls.Add(this.graphicsPanel);
-			this.Controls.Add(this.serverPanel);
 			this.Controls.Add(this.performancePanel);
-			this.Controls.Add(this.serverButton);
 			this.Controls.Add(this.performanceButton);
 			this.Controls.Add(this.graphicsButton);
 			this.Description = "View and change various Terrarium Client Game settings";
@@ -810,18 +650,14 @@ namespace Terrarium.Client
 			this.Load += new System.EventHandler(this.PeerProperties_Load);
 			this.Controls.SetChildIndex(this.graphicsButton, 0);
 			this.Controls.SetChildIndex(this.performanceButton, 0);
-			this.Controls.SetChildIndex(this.serverButton, 0);
 			this.Controls.SetChildIndex(this.bottomPanel, 0);
 			this.Controls.SetChildIndex(this.titleBar, 0);
 			this.Controls.SetChildIndex(this.performancePanel, 0);
-			this.Controls.SetChildIndex(this.serverPanel, 0);
 			this.Controls.SetChildIndex(this.graphicsPanel, 0);
 			this.bottomPanel.ResumeLayout(false);
 			this.performancePanel.ResumeLayout(false);
 			this.performancePanel.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.tbrPerformanceSlider)).EndInit();
-			this.serverPanel.ResumeLayout(false);
-			this.serverPanel.PerformLayout();
 			this.graphicsPanel.ResumeLayout(false);
 			this.ResumeLayout(false);
 
@@ -854,15 +690,6 @@ namespace Terrarium.Client
 
 			switch( panel.ToLower() )
 			{
-				case "server":
-					serverButton_Click( this, new EventArgs() );
-					return true;
-				case "registration":
-					registrationButton_Click( this, new EventArgs() );
-					return true;
-				case "community":
-					communityButton_Click( this, new EventArgs() );
-					return true;
 				case "graphics":
 					graphicsButton_Click( this, new EventArgs() );
 					return true;
@@ -891,37 +718,8 @@ namespace Terrarium.Client
 		/// <param name="e">Null</param>
 		private void OK_Click(object sender, System.EventArgs e)
 		{
-			// Validate the Peer Channel setting.  We do this first since if it is
-			// invalid, we want to keep the dialog open and let the user fix
-			if ( Terrarium.Game.GameEngine.Current != null )
-			{
-				if ( Terrarium.Game.GameEngine.Current.EcosystemMode == false )
-				{
-					if (this.txtPeerChannel.Text.ToLower( System.Globalization.CultureInfo.InvariantCulture) == "ecosystem")
-					{
-						MessageBox.Show(this, "Only Ecosystem mode can use that Peer Channel, please choose a different one.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-						this.SwitchPanel( "Server" );
-						this.txtPeerChannel.Focus();
-						return;
-					}
-
-					try
-					{
-						Terrarium.Game.GameEngine.Current.PeerChannel = this.txtPeerChannel.Text;
-					}
-					catch (Exception exception)
-					{
-						MessageBox.Show(this, "Could not connect to Peer Channel '" + this.txtPeerChannel.Text + "'.\r\n\r\nReason: " + exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-						this.SwitchPanel( "Server" );
-						this.txtPeerChannel.Focus();
-						return;
-					}
-				}
-			}
-	
 			bool restartRequired = false;
     
-			GameConfig.EnableNat = chkServerEnableNat.Checked;
 			GameConfig.BoundingBoxes = chkGraphicsBoundingBoxes.Checked;
 			GameConfig.BackgroundGrid = chkGraphicsBackgroundGrid.Checked;
 			GameConfig.DrawScreen = chkGraphicsDrawScreen.Checked;
@@ -948,18 +746,6 @@ namespace Terrarium.Client
 				GameConfig.CpuThrottle = tbrPerformanceSlider.Value;
 			}
         
-			if (GameConfig.WebRoot != txtServerURI.Text && txtServerURI.Text.Length != 0)
-			{
-				if (!RegisterServer())
-				{
-					return;
-				}
-				else
-				{
-					restartRequired = true;
-				}
-			}
-
 			GameConfig.StartFullscreen = this.chkStartFullscreen.Checked;
 
 			if (restartRequired)
@@ -1002,8 +788,6 @@ namespace Terrarium.Client
 		{       
         
 			tbrPerformanceSlider.Value = GameConfig.CpuThrottle;
-			txtServerURI.Text = GameConfig.WebRoot;
-			chkServerEnableNat.Checked = GameConfig.EnableNat;
         
 			chkGraphicsBoundingBoxes.Checked = GameConfig.BoundingBoxes;
 			chkGraphicsBackgroundGrid.Checked = GameConfig.BackgroundGrid;
@@ -1043,137 +827,16 @@ namespace Terrarium.Client
 				}
 			}
 
-			// Set up the peer channel text box
-			if ( Terrarium.Game.GameEngine.Current != null )
-			{
-				if ( Terrarium.Game.GameEngine.Current.EcosystemMode == true )
-				{
-					this.txtPeerChannel.Text = "Ecosystem";
-					this.txtPeerChannel.Enabled = false;
-				}
-				else
-				{
-					this.txtPeerChannel.Text = Terrarium.Game.GameEngine.Current.PeerChannel;
-				}			
-			}
-
 			this.chkStartFullscreen.Checked = GameConfig.StartFullscreen;					
 		}
     
-		/// <summary>
-		///  Controls email registration with the Terrarium server.
-		/// </summary>
-		/// <returns>True if the email was sent successfully, false otherwise.</returns>
-		private bool RegisterEmail()
-		{
-			//GameConfig.UserEmail = txtRegistrationEmail.Text;
-
-			//PeerDiscoveryService peerService = new PeerDiscoveryService();
-			//peerService.Url = GameConfig.WebRoot + "/discovery/discoverydb.asmx";
-			//peerService.Timeout = 60000; // 5 minute timeout
-        
-			//try
-			//{
-			//    peerService.RegisterUser(this.txtRegistrationEmail.Text);
-			//}
-			//catch (Exception exception)
-			//{
-			//    ErrorLog.LogHandledException(exception);
-			//    MessageBox.Show("Problems registering: " + exception.Message);
-			//    return false;
-			//}
-        
-			return true;
-		}
-    
-		/// <summary>
-		///  Tries to validate a new server whenever the server changes.
-		/// </summary>
-		/// <returns>True if the server is a valid Terrarium server, false otherwise.</returns>
-		private bool RegisterServer()
-		{
-			txtServerURI.Text = txtServerURI.Text.Trim();
-        
-			try
-			{
-				Uri uri = new Uri(txtServerURI.Text);
-			}
-			catch (Exception exception)
-			{
-				MessageBox.Show(exception.Message);
-				return false;
-			}
-        
-			this.Cursor = Cursors.WaitCursor;
-			try
-			{
-				PeerDiscoveryService peerService = new PeerDiscoveryService();
-				peerService.Url = txtServerURI.Text + "/discovery/discoverydb.asmx";
-				peerService.Timeout = 15000; // 15 seconds
-
-				peerService.ValidatePeer();
-				GameConfig.WebRoot = txtServerURI.Text;
-			}
-			catch (Exception exception)
-			{
-				ErrorLog.LogHandledException(exception);
-            
-				DialogResult result = MessageBox.Show("Error accessing '" + txtServerURI.Text + "':\nThe remote server is either unavailable or is not a valid Terrarium Server.\n\nWould you still like to set this address as your Terrarium server?", "Verify Terrarium Server", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-				if (result == DialogResult.Yes)
-				{
-					GameConfig.WebRoot = txtServerURI.Text;
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			finally
-			{
-				this.Cursor = Cursors.Default;      
-			}
-        
-			return true;
-		}
-
-		private void registrationPanel_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
-		{
-		
-		}
-
-		private void registrationButton_Click(object sender, System.EventArgs e)
-		{
-			this.graphicsPanel.Visible = false;
-			this.performancePanel.Visible = false;
-			this.serverPanel.Visible = false;
-
-			this.graphicsButton.Highlight = false;
-			this.performanceButton.Highlight = false;
-			this.serverButton.Highlight = false;
-		}
-
-		private void communityButton_Click(object sender, System.EventArgs e)
-		{
-			this.graphicsPanel.Visible = false;
-			this.performancePanel.Visible = false;
-			this.serverPanel.Visible = false;		
-
-			this.graphicsButton.Highlight = false;
-			this.performanceButton.Highlight = false;
-			this.serverButton.Highlight = false;		
-		
-		}
-
 		private void graphicsButton_Click(object sender, System.EventArgs e)
 		{
 			this.graphicsPanel.Visible = true;
 			this.performancePanel.Visible = false;
-			this.serverPanel.Visible = false;		
 
 			this.graphicsButton.Highlight = true;
 			this.performanceButton.Highlight = false;
-			this.serverButton.Highlight = false;		
 		
 		}
 
@@ -1181,22 +844,10 @@ namespace Terrarium.Client
 		{
 			this.performancePanel.Visible = true;
 			this.graphicsPanel.Visible = false;
-			this.serverPanel.Visible = false;		
 
 			this.performanceButton.Highlight = true;
 			this.graphicsButton.Highlight = false;
-			this.serverButton.Highlight = false;				
 		}
 
-		private void serverButton_Click(object sender, System.EventArgs e)
-		{
-			this.serverPanel.Visible = true;		
-			this.performancePanel.Visible = false;
-			this.graphicsPanel.Visible = false;
-
-			this.serverButton.Highlight = true;		
-			this.performanceButton.Highlight = false;
-			this.graphicsButton.Highlight = false;
-		}
 	}
 }

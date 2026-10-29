@@ -187,11 +187,6 @@
       <Project>{228FD808-F488-426E-9015-F5557AD44A40}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Services\Services.csproj">
-      <Name>Services</Name>
-      <Project>{6A2A6B54-D211-4766-82A6-0B8E2072BEF9}</Project>
-      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\VersionInfo.cs">
@@ -213,9 +208,6 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Classes\UI\PropertySheet.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Classes\UI\ReintroduceSpecies.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Classes\UI\ReportStats.cs">
@@ -262,10 +254,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Classes\UI\PropertySheet.resx">
       <DependentUpon>PropertySheet.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Classes\UI\ReintroduceSpecies.resx">
-      <DependentUpon>ReintroduceSpecies.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Classes\UI\ReportStats.resx">
@@ -393,8 +381,6 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
   </ItemGroup>
   <ItemGroup>
     <None Include="development.snk" />

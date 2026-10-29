@@ -21,12 +21,6 @@ namespace Terrarium.Forms
 	public class GlassBottomPanel : UserControl
 	{
 
-		/// <summary>
-		///  The current game mode used to enable some features
-		///  and disable others as well as set up initial tab
-		///  display.
-		/// </summary>
-		private GameModes mode;
 		private GlassPanel GlassPanel1;
 		private ToolTip controlsToolTip;
         private IContainer components;
@@ -34,11 +28,7 @@ namespace Terrarium.Forms
 		private Panel controlsMasterPanel;
 		private GlassButton loadTerrariumButton;
 		private GlassButton newTerrariumButton;
-		private GlassButton joinEcosystemButton;
 		private Panel panel2;
-		private Panel ecosystemControlsPanel;
-		private GlassButton reintroduceAnimalButton;
-		private GlassButton introduceAnimalEcosystemButton;
 		private Panel terrariumControlsPanel;
 		private GlassButton pauseButton;
 		private GlassButton addAnimalButton;
@@ -143,17 +133,6 @@ namespace Terrarium.Forms
 			}
 		}
 
-		/// <summary>
-		///  Access to the IntroduceAnimalEcosystemButton
-		/// </summary>
-		[Browsable(false)]
-		public GlassButton IntroduceAnimalEcosystemButton
-		{
-			get
-			{
-				return introduceAnimalEcosystemButton;
-			}
-		}
 
 		/// <summary>
 		///  Access to the IntroduceAnimalTerrariumButton
@@ -167,17 +146,6 @@ namespace Terrarium.Forms
 			}
 		}
 
-		/// <summary>
-		///  Access to the JoinEcosystemButton
-		/// </summary>
-		[Browsable(false)]
-		public GlassButton JoinEcosystemButton
-		{
-			get
-			{
-				return joinEcosystemButton;
-			}
-		}
 
 		/// <summary>
 		///  Access to the LoadTerrariumButton
@@ -215,17 +183,6 @@ namespace Terrarium.Forms
 			}
 		}
 
-		/// <summary>
-		///  Access to the ReintroduceAnimalButton
-		/// </summary>
-		[Browsable(false)]
-		public GlassButton ReintroduceAnimalButton
-		{
-			get
-			{
-				return reintroduceAnimalButton;
-			}
-		}
 
 		#endregion
 
@@ -242,49 +199,6 @@ namespace Terrarium.Forms
 			set
 			{
 				screenSaverMode = value;
-			}
-		}
-
-		/// <summary>
-		///  Current game mode.  Either Terrarium or EcoSystem.
-		/// </summary>
-		public GameModes GameMode
-		{
-			get
-			{
-				return mode;
-			}
-
-			set
-			{
-				mode = value;
-				if (mode == GameModes.Ecosystem)
-				{
-					this.ecosystemControlsPanel.Visible = true;
-					this.terrariumControlsPanel.Visible = false;
-				}
-				else
-				{
-					this.terrariumControlsPanel.Visible = true;
-					this.ecosystemControlsPanel.Visible = false;
-				}
-
-				int panelWidth = 0;
-				foreach (Control childControl in this.GlassPanel1.Controls)
-				{
-					if (childControl.Visible == true)
-						panelWidth += childControl.Width;
-				}
-				this.GlassPanel1.Width = panelWidth;
-
-				pauseButton.Enabled = (mode == GameModes.Terrarium);
-				addAnimalButton.Enabled = (mode == GameModes.Terrarium);
-				addAnimalComboBox.Enabled = (mode == GameModes.Terrarium);
-				introduceAnimalTerrariumButton.Enabled = (mode == GameModes.Terrarium);
-				joinEcosystemButton.Enabled = (mode == GameModes.Terrarium);
-
-				introduceAnimalEcosystemButton.Enabled = (mode == GameModes.Ecosystem);
-				reintroduceAnimalButton.Enabled = (mode == GameModes.Ecosystem);
 			}
 		}
 
@@ -354,15 +268,21 @@ namespace Terrarium.Forms
 
 			controlsToolTip.SetToolTip(this.settingsButton, "View and change current game settings.");
 			controlsToolTip.SetToolTip(this.detailsButton, "View details about the selected organism.");
-			controlsToolTip.SetToolTip(this.statisticsButton, "Open the statistics window for your local Ecosystem.");
+			controlsToolTip.SetToolTip(this.statisticsButton, "Open the statistics window for your Terrarium.");
 			controlsToolTip.SetToolTip(this.traceButton, "Open the diagnostic trace window.");
 
-			controlsToolTip.SetToolTip(this.joinEcosystemButton, "Switch to Ecosystem mode.");
-			controlsToolTip.SetToolTip(this.newTerrariumButton, "Switch to Terrarium mode and create a new Terrarium.");
-			controlsToolTip.SetToolTip(this.loadTerrariumButton, "Switch to Terrarium mode and load an existing Terrarium.");
+			controlsToolTip.SetToolTip(this.newTerrariumButton, "Create a new Terrarium.");
+			controlsToolTip.SetToolTip(this.loadTerrariumButton, "Load an existing Terrarium.");
 
             controlsToolTip.SetToolTip(this.developerPanelButton, "Show or Hide the Developer Panel.");
 
+			// Size the glass panel to the buttons it holds
+			int panelWidth = 0;
+			foreach (Control childControl in this.GlassPanel1.Controls)
+			{
+				panelWidth += childControl.Width;
+			}
+			this.GlassPanel1.Width = panelWidth;
 		}
 
 		private void InitializeComponent()
@@ -379,11 +299,7 @@ namespace Terrarium.Forms
             this.controlsMasterPanel = new System.Windows.Forms.Panel();
             this.loadTerrariumButton = new Terrarium.Glass.GlassButton();
             this.newTerrariumButton = new Terrarium.Glass.GlassButton();
-            this.joinEcosystemButton = new Terrarium.Glass.GlassButton();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.ecosystemControlsPanel = new System.Windows.Forms.Panel();
-            this.reintroduceAnimalButton = new Terrarium.Glass.GlassButton();
-            this.introduceAnimalEcosystemButton = new Terrarium.Glass.GlassButton();
             this.terrariumControlsPanel = new System.Windows.Forms.Panel();
             this.pauseButton = new Terrarium.Glass.GlassButton();
             this.addAnimalButton = new Terrarium.Glass.GlassButton();
@@ -395,7 +311,6 @@ namespace Terrarium.Forms
             this.GlassPanel1.SuspendLayout();
             this.buttonsPanel.SuspendLayout();
             this.controlsMasterPanel.SuspendLayout();
-            this.ecosystemControlsPanel.SuspendLayout();
             this.terrariumControlsPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -406,7 +321,6 @@ namespace Terrarium.Forms
             this.GlassPanel1.Controls.Add(this.panel1);
             this.GlassPanel1.Controls.Add(this.controlsMasterPanel);
             this.GlassPanel1.Controls.Add(this.panel2);
-            this.GlassPanel1.Controls.Add(this.ecosystemControlsPanel);
             this.GlassPanel1.Controls.Add(this.terrariumControlsPanel);
             this.GlassPanel1.Dock = System.Windows.Forms.DockStyle.Right;
             this.GlassPanel1.Gradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
@@ -559,11 +473,10 @@ namespace Terrarium.Forms
             this.controlsMasterPanel.BackColor = System.Drawing.Color.Transparent;
             this.controlsMasterPanel.Controls.Add(this.loadTerrariumButton);
             this.controlsMasterPanel.Controls.Add(this.newTerrariumButton);
-            this.controlsMasterPanel.Controls.Add(this.joinEcosystemButton);
             this.controlsMasterPanel.Dock = System.Windows.Forms.DockStyle.Right;
             this.controlsMasterPanel.Location = new System.Drawing.Point(234, 0);
             this.controlsMasterPanel.Name = "controlsMasterPanel";
-            this.controlsMasterPanel.Size = new System.Drawing.Size(135, 48);
+            this.controlsMasterPanel.Size = new System.Drawing.Size(91, 48);
             this.controlsMasterPanel.TabIndex = 31;
             // 
             // loadTerrariumButton
@@ -582,7 +495,7 @@ namespace Terrarium.Forms
             this.loadTerrariumButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
             this.loadTerrariumButton.Image = ((System.Drawing.Image)(resources.GetObject("loadTerrariumButton.Image")));
             this.loadTerrariumButton.IsGlass = true;
-            this.loadTerrariumButton.Location = new System.Drawing.Point(88, 2);
+            this.loadTerrariumButton.Location = new System.Drawing.Point(44, 2);
             this.loadTerrariumButton.Name = "loadTerrariumButton";
             this.loadTerrariumButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.loadTerrariumButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
@@ -610,7 +523,7 @@ namespace Terrarium.Forms
             this.newTerrariumButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
             this.newTerrariumButton.Image = ((System.Drawing.Image)(resources.GetObject("newTerrariumButton.Image")));
             this.newTerrariumButton.IsGlass = true;
-            this.newTerrariumButton.Location = new System.Drawing.Point(44, 2);
+            this.newTerrariumButton.Location = new System.Drawing.Point(0, 2);
             this.newTerrariumButton.Name = "newTerrariumButton";
             this.newTerrariumButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.newTerrariumButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
@@ -622,34 +535,6 @@ namespace Terrarium.Forms
             this.newTerrariumButton.UseStyles = true;
             this.newTerrariumButton.UseVisualStyleBackColor = false;
             // 
-            // joinEcosystemButton
-            // 
-            this.joinEcosystemButton.BackColor = System.Drawing.Color.Transparent;
-            this.joinEcosystemButton.BorderColor = System.Drawing.Color.Black;
-            this.joinEcosystemButton.Depth = 4;
-            this.joinEcosystemButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.joinEcosystemButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.joinEcosystemButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.joinEcosystemButton.ForeColor = System.Drawing.Color.White;
-            this.joinEcosystemButton.Highlight = false;
-            this.joinEcosystemButton.HighlightGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.joinEcosystemButton.HighlightGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.joinEcosystemButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.joinEcosystemButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.joinEcosystemButton.Image = ((System.Drawing.Image)(resources.GetObject("joinEcosystemButton.Image")));
-            this.joinEcosystemButton.IsGlass = true;
-            this.joinEcosystemButton.Location = new System.Drawing.Point(0, 2);
-            this.joinEcosystemButton.Name = "joinEcosystemButton";
-            this.joinEcosystemButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.joinEcosystemButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.joinEcosystemButton.PressedGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.joinEcosystemButton.PressedGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.joinEcosystemButton.Size = new System.Drawing.Size(44, 44);
-            this.joinEcosystemButton.TabIndex = 18;
-            this.joinEcosystemButton.TabStop = false;
-            this.joinEcosystemButton.UseStyles = true;
-            this.joinEcosystemButton.UseVisualStyleBackColor = false;
-            // 
             // panel2
             // 
             this.panel2.BackColor = System.Drawing.Color.Transparent;
@@ -658,75 +543,6 @@ namespace Terrarium.Forms
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(8, 48);
             this.panel2.TabIndex = 30;
-            // 
-            // ecosystemControlsPanel
-            // 
-            this.ecosystemControlsPanel.BackColor = System.Drawing.Color.Transparent;
-            this.ecosystemControlsPanel.Controls.Add(this.reintroduceAnimalButton);
-            this.ecosystemControlsPanel.Controls.Add(this.introduceAnimalEcosystemButton);
-            this.ecosystemControlsPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.ecosystemControlsPanel.Location = new System.Drawing.Point(377, 0);
-            this.ecosystemControlsPanel.Name = "ecosystemControlsPanel";
-            this.ecosystemControlsPanel.Size = new System.Drawing.Size(88, 48);
-            this.ecosystemControlsPanel.TabIndex = 29;
-            // 
-            // reintroduceAnimalButton
-            // 
-            this.reintroduceAnimalButton.BackColor = System.Drawing.Color.Transparent;
-            this.reintroduceAnimalButton.BorderColor = System.Drawing.Color.Black;
-            this.reintroduceAnimalButton.Depth = 4;
-            this.reintroduceAnimalButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.reintroduceAnimalButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.reintroduceAnimalButton.Enabled = false;
-            this.reintroduceAnimalButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.reintroduceAnimalButton.ForeColor = System.Drawing.Color.White;
-            this.reintroduceAnimalButton.Highlight = false;
-            this.reintroduceAnimalButton.HighlightGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.reintroduceAnimalButton.HighlightGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.reintroduceAnimalButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.reintroduceAnimalButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.reintroduceAnimalButton.Image = ((System.Drawing.Image)(resources.GetObject("reintroduceAnimalButton.Image")));
-            this.reintroduceAnimalButton.IsGlass = true;
-            this.reintroduceAnimalButton.Location = new System.Drawing.Point(44, 2);
-            this.reintroduceAnimalButton.Name = "reintroduceAnimalButton";
-            this.reintroduceAnimalButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.reintroduceAnimalButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.reintroduceAnimalButton.PressedGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.reintroduceAnimalButton.PressedGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.reintroduceAnimalButton.Size = new System.Drawing.Size(44, 44);
-            this.reintroduceAnimalButton.TabIndex = 12;
-            this.reintroduceAnimalButton.TabStop = false;
-            this.reintroduceAnimalButton.UseStyles = true;
-            this.reintroduceAnimalButton.UseVisualStyleBackColor = false;
-            // 
-            // introduceAnimalEcosystemButton
-            // 
-            this.introduceAnimalEcosystemButton.BackColor = System.Drawing.Color.Transparent;
-            this.introduceAnimalEcosystemButton.BorderColor = System.Drawing.Color.Black;
-            this.introduceAnimalEcosystemButton.Depth = 4;
-            this.introduceAnimalEcosystemButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.introduceAnimalEcosystemButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.introduceAnimalEcosystemButton.Enabled = false;
-            this.introduceAnimalEcosystemButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.introduceAnimalEcosystemButton.ForeColor = System.Drawing.Color.White;
-            this.introduceAnimalEcosystemButton.Highlight = false;
-            this.introduceAnimalEcosystemButton.HighlightGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.introduceAnimalEcosystemButton.HighlightGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.introduceAnimalEcosystemButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.introduceAnimalEcosystemButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.introduceAnimalEcosystemButton.Image = ((System.Drawing.Image)(resources.GetObject("introduceAnimalEcosystemButton.Image")));
-            this.introduceAnimalEcosystemButton.IsGlass = true;
-            this.introduceAnimalEcosystemButton.Location = new System.Drawing.Point(0, 2);
-            this.introduceAnimalEcosystemButton.Name = "introduceAnimalEcosystemButton";
-            this.introduceAnimalEcosystemButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.introduceAnimalEcosystemButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.introduceAnimalEcosystemButton.PressedGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.introduceAnimalEcosystemButton.PressedGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.introduceAnimalEcosystemButton.Size = new System.Drawing.Size(44, 44);
-            this.introduceAnimalEcosystemButton.TabIndex = 11;
-            this.introduceAnimalEcosystemButton.TabStop = false;
-            this.introduceAnimalEcosystemButton.UseStyles = true;
-            this.introduceAnimalEcosystemButton.UseVisualStyleBackColor = false;
             // 
             // terrariumControlsPanel
             // 
@@ -889,7 +705,6 @@ namespace Terrarium.Forms
             this.GlassPanel1.ResumeLayout(false);
             this.buttonsPanel.ResumeLayout(false);
             this.controlsMasterPanel.ResumeLayout(false);
-            this.ecosystemControlsPanel.ResumeLayout(false);
             this.terrariumControlsPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 

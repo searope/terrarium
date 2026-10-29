@@ -33,11 +33,11 @@ namespace Terrarium.Forms
         /// </summary>
         NoScreenSaver,
         /// <summary>
-        ///  Run the Terrarium in Terrarium game mode
+        ///  Run the Terrarium with a saved terrarium
         /// </summary>
         RunLoadTerrarium,
         /// <summary>
-        ///  Run the Terrarium in Ecosystem game mode
+        ///  Run the Terrarium with a new terrarium
         /// </summary>
         RunNewTerrarium
     }

@@ -22,14 +22,6 @@ namespace Terrarium.Forms.Classes.Controls
 		{
 			InitializeComponent();
 			this.BackColor = GlassStyleManager.Active.DialogColor;
-		
-			// Hook up the Leds
-			leds[0] = this.ledOne;
-			leds[1] = this.ledTwo;
-			leds[2] = this.ledThree;
-			leds[3] = this.ledFour;
-			foreach (TerrariumLed led in leds)
-				led.Enabled = false;
 		}
 
 		#region STATUS SUPPORT
@@ -85,105 +77,26 @@ namespace Terrarium.Forms.Classes.Controls
 		{
 			get
 			{
-				return Convert.ToInt32(this.teleportationsCountLabel.Text);
+				return Convert.ToInt32(this.plantCountLabel.Text);
 			}
 			set
 			{
-				this.teleportationsCountLabel.Text = value.ToString();
+				this.plantCountLabel.Text = value.ToString();
 			}
 		}
 
 		/// <summary>
-		/// 
+		///  The file the current terrarium is saved in.
 		/// </summary>
-		public int PeerCount
+		public string GamePath
 		{
 			get
 			{
-				return Convert.ToInt32(this.peerCountLabel.Text);
+				return this.gamePathLabel.Text;
 			}
 			set
 			{
-				this.peerCountLabel.Text = value.ToString();
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public string WebRoot
-		{
-			get
-			{
-				return this.webRootLabel.Text;
-			}
-			set
-			{
-				this.webRootLabel.Text = value;
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public int Teleportations
-		{
-			get
-			{
-				return Convert.ToInt32(this.teleportationsCountLabel.Text);
-			}
-			set
-			{
-				this.teleportationsCountLabel.Text = value.ToString();
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public int FailedSends
-		{
-			get
-			{
-				return Convert.ToInt32(this.failedSendsCountLabel.Text);
-			}
-			set
-			{
-				this.failedSendsCountLabel.Text = value.ToString();
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public int FailedReceives
-		{
-			get
-			{
-				return Convert.ToInt32(this.failedReceivesCountLabel.Text);
-			}
-			set
-			{
-				this.failedReceivesCountLabel.Text = value.ToString();
-			}
-		}
-
-		#endregion
-
-		#region LED SUPPORT
-
-		private TerrariumLed[] leds = new Terrarium.Forms.TerrariumLed[4];
-
-		/// <summary>
-		///  Provides quick array based access to fall 5 
-		///  status LEDs within the TerrariumTopPanel.
-		/// </summary>
-		[Browsable(false)]
-		public TerrariumLed[] Leds
-		{
-			get
-			{
-				return leds;
+				this.gamePathLabel.Text = value;
 			}
 		}
 
@@ -353,16 +266,6 @@ namespace Terrarium.Forms.Classes.Controls
 
 			this.navigatePictureBox.Image = mapImage;
 		}
-
-		private void failedReceivesLabel_Click(object sender, EventArgs e)
-		{
-
-		}
-
-        private void glassLabel4_Click(object sender, EventArgs e)
-        {
-
-        }
 
 	}
 }

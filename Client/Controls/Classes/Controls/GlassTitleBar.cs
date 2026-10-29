@@ -50,10 +50,6 @@ namespace Terrarium.Forms
 		/// </summary>
 		public event EventHandler	MinimizeClicked;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public event EventHandler BugClicked;
 
 
 		/// <summary>
@@ -65,7 +61,6 @@ namespace Terrarium.Forms
 		/// </summary>
 		private Point mouseDown;
 		private Terrarium.Glass.GlassPanel backgroundPanel;
-        private Terrarium.Glass.GlassButton bugButton;
         private Panel imagePanel;
         private PictureBox titleBarImage;
         private Terrarium.Glass.GlassLabel titleBarTitle;
@@ -91,7 +86,6 @@ namespace Terrarium.Forms
             this.imagePanel = new System.Windows.Forms.Panel();
             this.titleBarImage = new System.Windows.Forms.PictureBox();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.bugButton = new Terrarium.Glass.GlassButton();
             this.minimizeButton = new Terrarium.Glass.GlassButton();
             this.maximizeButton = new Terrarium.Glass.GlassButton();
             this.closeButton = new Terrarium.Glass.GlassButton();
@@ -169,7 +163,6 @@ namespace Terrarium.Forms
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.Transparent;
-            this.panel1.Controls.Add(this.bugButton);
             this.panel1.Controls.Add(this.minimizeButton);
             this.panel1.Controls.Add(this.maximizeButton);
             this.panel1.Controls.Add(this.closeButton);
@@ -178,35 +171,6 @@ namespace Terrarium.Forms
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(166, 32);
             this.panel1.TabIndex = 6;
-            // 
-            // bugButton
-            // 
-            this.bugButton.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.bugButton.BackColor = System.Drawing.Color.Transparent;
-            this.bugButton.BorderColor = System.Drawing.Color.Black;
-            this.bugButton.Depth = 3;
-            this.bugButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.bugButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.bugButton.Highlight = false;
-            this.bugButton.HighlightGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.bugButton.HighlightGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.bugButton.HoverGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.bugButton.HoverGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.bugButton.IsGlass = true;
-            this.bugButton.Location = new System.Drawing.Point(4, 2);
-            this.bugButton.Name = "bugButton";
-            this.bugButton.NormalGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.bugButton.NormalGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
-            this.bugButton.PressedGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(216)))), ((int)(((byte)(0)))));
-            this.bugButton.PressedGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.bugButton.Size = new System.Drawing.Size(75, 28);
-            this.bugButton.TabIndex = 9;
-            this.bugButton.TabStop = false;
-            this.bugButton.Text = "File a Bug";
-            this.bugButton.UseStyles = true;
-            this.bugButton.UseVisualStyleBackColor = false;
-            this.bugButton.Visible = false;
-            this.bugButton.Click += new System.EventHandler(this.glassButton1_Click);
             // 
             // minimizeButton
             // 
@@ -358,17 +322,6 @@ namespace Terrarium.Forms
 			}
 		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="args"></param>
-        protected virtual void OnBugClicked(EventArgs args)
-        {
-            if (this.BugClicked != null)
-            {
-                this.BugClicked(this, args);
-            }
-        }
 
 		/// <summary>
 		/// 
@@ -451,22 +404,6 @@ namespace Terrarium.Forms
 			}
 		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        [DefaultValue(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public bool ShowBugButton
-        {
-            get
-            {
-                return this.bugButton.Visible;
-            }
-            set
-            {
-                this.bugButton.Visible = value;
-            }
-        }
 
 		/// <summary>
 		/// 
@@ -530,11 +467,6 @@ namespace Terrarium.Forms
 		{
 			this.OnDoubleClick(e);
 		}
-
-        private void glassButton1_Click(object sender, EventArgs e)
-        {
-            this.OnBugClicked(e);
-        }
 
 	}
 }

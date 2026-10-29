@@ -11,8 +11,6 @@ using OrganismBase;
 using Terrarium.Configuration;
 using Terrarium.Forms;
 using Terrarium.Hosting;
-using Terrarium.PeerToPeer;
-using Terrarium.Services.Species;
 using Terrarium.Tools;
 
 namespace Terrarium.Game
@@ -26,12 +24,10 @@ namespace Terrarium.Game
     /// </summary>
     public class GameEngine
     {
-        private static bool _invalidPeerError;
         private static int _maxAnimals;
         private static int _maxPlants;
         private static int _organismQuanta;
         private static bool _reloadSettings = true;
-        private static bool _shutdownError;
         private static int _worldHeight;
         private static int _worldWidth;
 
@@ -74,17 +70,7 @@ namespace Terrarium.Game
         /// </summary>
         private WorldVector _currentVector;
 
-        private Boolean _ecosystemMode;
-
-        /// <summary>
-        ///  Array referencing each of the LED indicators within the
-        ///  UI portion of the Terrarium.
-        /// </summary>
-        private TerrariumLed[] _ledIndicators;
-
         private Boolean _logState;
-
-        private NetworkEngine _networkEngine;
 
         /// <summary>
         /// This is the state object that gets built up that eventually represents the
@@ -113,25 +99,14 @@ namespace Terrarium.Game
         private int _turnPhase;
 
         /// <summary>
-        ///  Indicates whether or not the Network engine is going
-        ///  to be used to enable a connected Terrarium.
-        /// </summary>
-        private bool _usingNetwork = true;
-
-        /// <summary>
         ///  Constructs a new game engine.
         /// </summary>
         /// <param name="dataPath">The path to save game directory.</param>
-        /// <param name="useNetwork">Controls the usage of the network engine.</param>
         /// <param name="deserializeState">Controls if the state is deserialized or not.</param>
         /// <param name="fileName">The path to the state file.</param>
-        /// <param name="reportData">Determines if data should be reported.</param>
-        /// <param name="leds">Provides a listing of game leds that can be used.</param>
         /// <param name="trackLastRun">Controls whether the PAC keeps track of the last run creature for blacklisting.</param>
-        private GameEngine(string dataPath, bool useNetwork, bool deserializeState, string fileName, bool reportData,
-                           TerrariumLed[] leds, bool trackLastRun)
+        private GameEngine(string dataPath, bool deserializeState, string fileName, bool trackLastRun)
         {
-            _ledIndicators = leds;
             _currentStateFileName = fileName;
 
             // test to make sure we're not violating any constraints by current
@@ -144,9 +119,7 @@ namespace Terrarium.Game
 
             _pac = new PrivateAssemblyCache(dataPath, fileName, true, trackLastRun);
 
-
-            _usingNetwork = useNetwork;
-            _populationData = new PopulationData(reportData, leds[(int) LedIndicators.ReportWebService]);
+            _populationData = new PopulationData();
 
             // Should only happen if an exception prevented a previous attempt to start a game
             if (AppMgr.CurrentScheduler != null)
@@ -157,12 +130,6 @@ namespace Terrarium.Game
             // Create a scheduler that manages giving the creatures timeslices
             _scheduler = AppMgr.CreateSameDomainScheduler(this);
             _scheduler.Quantum = _organismQuanta;
-
-            if (useNetwork)
-            {
-                // Required to start up the network listeners
-                _networkEngine = new NetworkEngine();
-            }
 
             WorldState currentState;
             Boolean successfulDeserialization = false;
@@ -203,72 +170,11 @@ namespace Terrarium.Game
         }
 
         /// <summary>
-        /// NetworkEngine is a reference to the network object that does all peer to peer communication
-        /// for this instance of the game.
-        /// </summary>
-        /// <returns>A reference to the network engine.</returns>
-        public NetworkEngine NetworkEngine
-        {
-            get { return _networkEngine; }
-        }
-
-        /// <summary>
         ///  Provides a managed location for creature assemblies.
         /// </summary>
         public PrivateAssemblyCache Pac
         {
             get { return _pac; }
-        }
-
-        /// <summary>
-        ///  Returns the number of peers from the network engine.
-        /// </summary>
-        public int PeerCount
-        {
-            get { return _usingNetwork && _networkEngine != null ? _networkEngine.PeerCount : 0; }
-        }
-
-        /// <summary>
-        ///  Gets the current peer channel from the network engine.  Also
-        ///  allows the user to change the peer channel and network with
-        ///  a different set of machines.
-        /// </summary>
-        public string PeerChannel
-        {
-            get { return _usingNetwork && _networkEngine != null ? _networkEngine.PeerChannel : "<not networked>"; }
-
-            set
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    if (_usingNetwork && _networkEngine != null)
-                    {
-                        _networkEngine.ShutdownNetwork();
-                        _networkEngine = null;
-                        _usingNetwork = false;
-                    }
-                }
-                else
-                {
-                    if (_usingNetwork && _networkEngine != null)
-                    {
-                        _networkEngine.ShutdownNetwork();
-                        _networkEngine = null;
-                    }
-
-                    _usingNetwork = true;
-                    _networkEngine = new NetworkEngine();
-                    _networkEngine.InitializeNetwork(value, _ledIndicators);
-                }
-            }
-        }
-
-        /// <summary>
-        ///  Determines if the engine is in EcoSystem mode or some other mode.
-        /// </summary>
-        public Boolean EcosystemMode
-        {
-            get { return _ecosystemMode; }
         }
 
         /// <summary>
@@ -321,40 +227,6 @@ namespace Terrarium.Game
         public static GameEngine Current
         {
             get { return _engine; }
-        }
-
-        /// <summary>
-        ///  Used to notify the game engine that a shutdown level
-        ///  error has occured.
-        /// </summary>
-        public static bool ShutdownError
-        {
-            get { return _shutdownError; }
-
-            set
-            {
-                lock (typeof (GameEngine))
-                {
-                    _shutdownError = value;
-                }
-            }
-        }
-
-        /// <summary>
-        ///  Used to notify the game engine that the peer is not
-        ///  able to play the game networked.
-        /// </summary>
-        public static bool InvalidPeerError
-        {
-            get { return _invalidPeerError; }
-
-            set
-            {
-                lock (typeof (GameEngine))
-                {
-                    _invalidPeerError = value;
-                }
-            }
         }
 
         /// <summary>
@@ -428,19 +300,20 @@ namespace Terrarium.Game
         }
 
         /// <summary>
+        ///  Identifies the current count of Plant class creatures in the
+        ///  game engine.
+        /// </summary>
+        public int PlantCount
+        {
+            get { return _plantCount; }
+        }
+
+        /// <summary>
         ///  The current turn phase.  There are ten phases per tick.
         /// </summary>
         public int TurnPhase
         {
             get { return _turnPhase; }
-        }
-
-        /// <summary>
-        /// Used to determine if the network is running
-        /// </summary>
-        public bool IsNetworkEnabled
-        {
-            get { return _usingNetwork; }
         }
 
         /// <summary>
@@ -471,24 +344,12 @@ namespace Terrarium.Game
                 this.serializeState(_currentStateFileName);
             }
 
-            if (_usingNetwork && _networkEngine != null)
-            {
-                _networkEngine.ShutdownNetwork();
-                _networkEngine = null;
-                _usingNetwork = false;
-            }
-
-            // Shut down populationData after serializing since serializing
+            // Release populationData after serializing since serializing
             // may advance to the end of the tick
-            if (_populationData != null)
-            {
-                _populationData.Close();
-                _populationData = null;
-            }
+            _populationData = null;
 
             AppMgr.DestroyScheduler();
             _pac.Close();
-            _ledIndicators = null;
             _engine = null;
         }
 
@@ -601,20 +462,18 @@ namespace Terrarium.Game
         }
 
         /// <summary>
-        ///  Creates a new game engine that can be used for a Terrarium game.  Terrarium
-        ///  games aren't networked and can load any creatures.
+        ///  Creates a new game engine that can be used for a Terrarium game.
         /// </summary>
         /// <param name="dataPath">The path where the Terrarium game will be stored.</param>
         /// <param name="fileName">The path to the serialized Terrarium.</param>
-        /// <param name="leds">A series of leds to be used for state reporting.</param>
-        public static void NewTerrariumGame(string dataPath, string fileName, TerrariumLed[] leds)
+        public static void NewTerrariumGame(string dataPath, string fileName)
         {
             if (_engine != null)
             {
                 _engine.StopGame(false);
             }
 
-            _engine = new GameEngine(dataPath, false, false, fileName, false, leds, true);
+            _engine = new GameEngine(dataPath, false, fileName, true);
         }
 
         /// <summary>
@@ -622,66 +481,14 @@ namespace Terrarium.Game
         /// </summary>
         /// <param name="dataPath">The path where the Terrarium game will be stored.</param>
         /// <param name="fileName">The path to the serialized Terrarium.</param>
-        /// <param name="leds">A series of leds to be used for state reporting.</param>
-        public static void LoadTerrariumGame(string dataPath, string fileName, TerrariumLed[] leds)
+        public static void LoadTerrariumGame(string dataPath, string fileName)
         {
             if (_engine != null)
             {
                 _engine.StopGame(false);
             }
 
-            _engine = new GameEngine(dataPath, false, true, fileName, false, leds, true);
-        }
-
-        /// <summary>
-        ///  Creates a new game engine that can be used to play an EcoSystem game.
-        /// </summary>
-        /// <param name="dataPath">The path where the Terrarium game will be stored.</param>
-        /// <param name="fileName">The path to the serialized Terrarium.</param>
-        /// <param name="leds">A series of leds to be used for state reporting.</param>
-        public static void NewEcosystemGame(string dataPath, string fileName, TerrariumLed[] leds)
-        {
-            if (_engine != null)
-            {
-                _engine.StopGame(false);
-            }
-
-            _engine = new GameEngine(dataPath, true, false, dataPath + fileName, true, leds, true);
-
-            // Start the network after Current is set on GameEngine because the network
-            // needs a current gameengine to receive teleportations
-            if (_engine._usingNetwork)
-            {
-                _engine._networkEngine.InitializeNetwork("EcoSystem", leds);
-            }
-
-            _engine._ecosystemMode = true;
-        }
-
-        /// <summary>
-        ///  Creates a new game engine that can be used to load a pre-existing
-        ///  EcoSystem game.
-        /// </summary>
-        /// <param name="dataPath">The path where the Terrarium game will be stored.</param>
-        /// <param name="fileName">The path to the serialized Terrarium.</param>
-        /// <param name="leds">A series of leds to be used for state reporting.</param>
-        public static void LoadEcosystemGame(string dataPath, string fileName, TerrariumLed[] leds)
-        {
-            if (_engine != null)
-            {
-                _engine.StopGame(false);
-            }
-
-            _engine = new GameEngine(dataPath, true, true, dataPath + fileName, true, leds, true);
-
-            // Start the network after Current is set on GameEngine because the network
-            // needs a current gameengine to receive teleportations
-            if (_engine._usingNetwork)
-            {
-                _engine._networkEngine.InitializeNetwork("EcoSystem", leds);
-            }
-
-            _engine._ecosystemMode = true;
+            _engine = new GameEngine(dataPath, true, fileName, true);
         }
 
         /// <summary>
@@ -926,23 +733,13 @@ namespace Terrarium.Game
             state.MakeImmutable();
             teleportState.OrganismState = state;
             teleportState.Organism = organism;
-            teleportState.OrganismWrapper = new OrganismWrapper(organism);
             teleportState.Originator = _newWorldState.StateGuid;
-            teleportState.Country = GameConfig.UserCountry;
-            teleportState.State = GameConfig.UserState;
 
             // Remove it from this world
             removeOrganism(new KilledOrganism(state.ID, PopulationChangeReason.TeleportedFrom));
 
-            // Teleport the organism through the network engine
-            if (_usingNetwork)
-            {
-                _networkEngine.Teleport(teleportState);
-            }
-            else
-            {
-                ReceiveTeleportation(teleportState, true);
-            }
+            // With no peers to send it to, the organism always comes back into this world
+            ReceiveTeleportation(teleportState, true);
         }
 
         /// <summary>
@@ -1057,94 +854,26 @@ namespace Terrarium.Game
                     "Your organism doesn't appear to be a valid .NET Framework assembly.  It is possible you're loading an old assembly.");
             }
 
-            SpeciesServiceStatus speciesResult = SpeciesServiceStatus.Success;
-            if (!reintroduction)
+            if (!_pac.Exists(organismAssembly.FullName))
             {
-                // Load the species to make sure that its attributes conform to our rules (will throw an
-                // exception if this isn't true
-                SpeciesService service = new SpeciesService();
-                service.Url = GameConfig.WebRoot + "/species/addspecies.asmx";
-                service.Timeout = 60000;
-                if (EcosystemMode)
-                {
-                    // If we're in ecosystem mode,
-                    // make sure it has a unique assembly name (which is also the species name)
-                    string speciesType;
-                    if (newSpecies is AnimalSpecies)
-                    {
-                        speciesType = ((AnimalSpecies) newSpecies).IsCarnivore ? "Carnivore" : "Herbivore";
-                    }
-                    else
-                    {
-                        speciesType = "Plant";
-                    }
-
-                    if (!Regex.IsMatch(newSpecies.AssemblyInfo.ShortName, "[0-9a-zA-Z ]+"))
-                    {
-                        throw new GameEngineException(
-                            "The assembly name of your organism must consist only of ASCII letters, digits, and spaces.");
-                    }
-
-                    speciesResult = service.Add(newSpecies.AssemblyInfo.ShortName,
-                                                Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                                                speciesType, newSpecies.AuthorName, newSpecies.AuthorEmail,
-                                                newSpecies.AssemblyInfo.FullName, asm);
-                }
+                _pac.SaveOrganismAssembly(assemblyPath, Path.ChangeExtension(assemblyPath, ".pdb"),
+                                         organismAssembly.FullName);
+            }
+            else if (!reintroduction)
+            {
+                // If this is not a reintroduction, then the assembly should not be there.  If it is, we can't
+                // ignore it because it could be a user testing out their organism and if they
+                // introduce twice with two different assemblies, they'll all end up using the one that's already there
+                // and not the new one if they save and reload.
+                throw new GameEngineException(
+                    "Organism assemblies can only be introduced once into a Terrarium. \r\n - If you are just trying to add more of these animals, select your animal in the 'Species' dropdown below and push the 'add' button.\r\n - If you are developing an animal and have a new assembly to try, create a new terrarium and introduce it there.");
             }
 
-            if (reintroduction || speciesResult == SpeciesServiceStatus.Success)
-            {
-                if (!_pac.Exists(organismAssembly.FullName))
-                {
-                    _pac.SaveOrganismAssembly(assemblyPath, Path.ChangeExtension(assemblyPath, ".pdb"),
-                                             organismAssembly.FullName);
-                }
-                else if (!reintroduction)
-                {
-                    // If this is not a reintroduction, then the assembly should not be there.  If it is, we can't
-                    // ignore it because it could be a user testing out their organism in terrarium mode and if they
-                    // introduce twice with two different assemblies, they'll all end up using the one that's already there
-                    // and not the new one if they save and reload.
-                    if (!EcosystemMode)
-                    {
-                        throw new GameEngineException(
-                            "Organism assemblies can only be introduced once into a Terrarium. \r\n - If you are just trying to add more of these animals, select your animal in the 'Species' dropdown below and push the 'add' button.\r\n - If you are developing an animal and have a new assembly to try, create a new terrarium and introduce it there.");
-                    }
-                    // The server should prevent
-                    Debug.Assert(false);
-                    throw new GameEngineException(
-                        "Can't add this species because you already have an assembly with the same name in your Ecosystem.");
-                }
+            newSpecies = Species.GetSpeciesFromAssembly(_pac.LoadOrganismAssembly(organismAssembly.FullName));
 
-                newSpecies = Species.GetSpeciesFromAssembly(_pac.LoadOrganismAssembly(organismAssembly.FullName));
-
-                for (int i = 0; i < 10; i++)
-                {
-                    AddNewOrganism(newSpecies, Point.Empty);
-                }
-            }
-            else switch (speciesResult)
+            for (int i = 0; i < 10; i++)
             {
-                case SpeciesServiceStatus.AlreadyExists:
-                    throw new GameEngineException(
-                        "Species name already exists in universe, please choose a new assembly name.");
-                case SpeciesServiceStatus.FiveMinuteThrottle:
-                    throw new GameEngineException(
-                        "You have submitted another species within the last 5 minutes.  Please wait at least 5 minutes between adding new species.");
-                case SpeciesServiceStatus.TwentyFourHourThrottle:
-                    throw new GameEngineException(
-                        "You have submitted 30 species within the last 24 hours.  You now have to wait up to 24 hours to introduce a new species.");
-                case SpeciesServiceStatus.PoliCheckSpeciesNameFailure:
-                    throw new GameEngineException(
-                        "Your Species Name has failed our basic check for inflammatory terms.  Please resubmit using a new name, or if your name was flagged in error, please try using initials or other monikers.");
-                case SpeciesServiceStatus.PoliCheckAuthorNameFailure:
-                    throw new GameEngineException(
-                        "Your Author Name has failed our basic check for inflammatory terms.  Please resubmit using a new name, or if your name was flagged in error, please try using initials or other monikers.");
-                case SpeciesServiceStatus.PoliCheckEmailFailure:
-                    throw new GameEngineException(
-                        "Your Email has failed our basic check for inflammatory terms.  Please resubmit using a different email address.");
-                default:
-                    throw new GameEngineException("Terrarium is experience some server problems.  Please try again later.");
+                AddNewOrganism(newSpecies, Point.Empty);
             }
 
             return newSpecies;
@@ -1177,32 +906,7 @@ namespace Terrarium.Game
                         }
                     }
 
-                    Organism organism;
-                    try
-                    {
-                        organism = teleportState.TeleportedToSelf
-                                       ? teleportState.Organism
-                                       : teleportState.OrganismWrapper.Organism;
-                    }
-                    catch (FileLoadException e)
-                    {
-                        // Here we want to log how many organisms are getting killed
-                        // FileLoadException will happen when an organism is blacklisted, so don't show a message because the message contains the name
-                        ErrorLog.LogHandledException(e);
-                        OnEngineStateChanged(new EngineStateChangedEventArgs(EngineStateChangeType.Other,
-                                                                             "An organism died during teleportation"));
-                        continue;
-                    }
-                    catch (Exception e)
-                    {
-                        // Here we want to log how many organisms are getting killed
-                        ErrorLog.LogHandledException(e);
-                        OnEngineStateChanged(new EngineStateChangedEventArgs(EngineStateChangeType.Other,
-                                                                             "An organism died during teleportation: " +
-                                                                             e.Message));
-                        continue;
-                    }
-
+                    Organism organism = teleportState.Organism;
                     OrganismState organismState = teleportState.OrganismState;
 
                     // Make it mutable and change its position
@@ -1405,23 +1109,6 @@ namespace Terrarium.Game
         /// <returns>True if a tick has been processed, false otherwise.</returns>
         public Boolean ProcessTurn()
         {
-            // shutdownError and invalidPeerError are two errors that get set from
-            // deep in the system.  We process them here because it is a clean place
-            // to restart the game since we aren't in the middle of any phases.
-            // This is just a mechanism for cleanly throwing an error from a known good
-            // location.
-            if (_shutdownError)
-            {
-                _shutdownError = false;
-                throw new ShutdownFailureException();
-            }
-
-            if (_invalidPeerError)
-            {
-                _invalidPeerError = false;
-                throw new InvalidPeerException();
-            }
-
             // We break the main processing of the game into 10 phases that have been tuned to each
             // take roughly the same amount of time.  We paint the screen in between each one.  This way
             // We can have a constant frame rate and incrementally do the engine processing we need to
@@ -1431,14 +1118,8 @@ namespace Terrarium.Game
             switch (_turnPhase)
             {
                 case 0:
-                    // If we are in ecosystem mode, we want to save the game state periodically in case the user
-                    // shuts down the screensaver by pressing ctl-alt-del which just kills the process.  This way
-                    // we won't have lost too much processing time.
-                    // We always want to save on the tick after we've reported so we don't get our state messed up
-                    // on the server.  For example: never start the game in a state that was before the information
-                    // was sent to the server because the server will think we're corrupted.
-                    if (_logState ||
-                        (_ecosystemMode && _populationData.IsReportingTick(CurrentVector.State.TickNumber - 1)))
+                    // Save the state every tick when state logging is on (a debugging aid)
+                    if (_logState)
                     {
                         Debug.WriteLine("Saving state.");
                         serializeState(_currentStateFileName);

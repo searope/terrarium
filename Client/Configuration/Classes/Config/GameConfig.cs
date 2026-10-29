@@ -14,8 +14,7 @@ namespace Terrarium.Configuration
     ///  access to all user configuration file values.
     ///  This class primarily encapsulates a series
     ///  of string and boolean values, but can be extended
-    ///  for more complex values, like the State and
-    ///  Country classes.
+    ///  for more complex values.
     /// </summary>
     public class GameConfig
     {
@@ -40,20 +39,9 @@ namespace Terrarium.Configuration
         private static readonly CachedBooleanConfig _destinationLines = new CachedBooleanConfig("destinationLines", false);
 
         /// <summary>
-        ///  Field representing the use of the discovery override for the network engine
-        /// </summary>
-        private static readonly CachedBooleanConfig _discoveryOverride = new CachedBooleanConfig("discoveryOverride",
-                                                                                                false);
-
-        /// <summary>
         ///  Field representing the screen drawing rendering state
         /// </summary>
         private static readonly CachedBooleanConfig _drawScreen = new CachedBooleanConfig("drawScreen", true);
-
-        /// <summary>
-        ///  Field representing the use of a NAT device for the network engine
-        /// </summary>
-        private static readonly CachedBooleanConfig _enableNat = new CachedBooleanConfig("enableNat", false);
 
         /// <summary>
         ///  Field representing the large graphics modes rendering state
@@ -66,11 +54,6 @@ namespace Terrarium.Configuration
         /// </summary>
         private static readonly CachedBooleanConfig _screenSaverSpanMonitors =
             new CachedBooleanConfig("screenSaverSpanMonitors", false);
-
-        /// <summary>
-        /// Allows a client to skip checking the server for disabled versions
-        /// </summary>
-        private static readonly CachedBooleanConfig _skipVersionCheck = new CachedBooleanConfig("skipVersionCheck", false);
 
         /// <summary>
         /// Field that represents whether to start in fullscreen (maximized) mode.
@@ -89,16 +72,6 @@ namespace Terrarium.Configuration
         private static string _applicationDirectory = "";
 
         /// <summary>
-        ///  Field representing the version string of a blocked terrarium
-        /// </summary>
-        private static string _blockedVersionString = "";
-
-        /// <summary>
-        ///  Field representing the local IP address to use for the network engine
-        /// </summary>
-        private static string _localIPAddress = "";
-
-        /// <summary>
         ///  Field representing the current trace logging mode for the Hosting code
         /// </summary>
         private static string _loggingMode = "";
@@ -109,22 +82,10 @@ namespace Terrarium.Configuration
         private static string _mediaDirectory = "";
 
         /// <summary>
-        ///  Field representing a comma separated list of peers for use with
-        ///  discovery override.
-        /// </summary>
-        private static string _peerList = "";
-
-        /// <summary>
         /// Field representing the Metal Style that Terrarium should use
         /// for the custom controls.
         /// </summary>
         private static string _styleName = "";
-
-        /// <summary>
-        ///  Field representing the user's country/region as set by the peer properties
-        ///  dialogue.  This value is sent during teleportation.
-        /// </summary>
-        private static string _userCountry = "";
 
         /// <summary>
         ///  Field representing the user's email address.  This value is used
@@ -132,19 +93,6 @@ namespace Terrarium.Configuration
         ///  in contacting the user for additional details or a repro case.
         /// </summary>
         private static string _userEmail = "";
-
-        /// <summary>
-        ///  Field representing the user's state as set by the peer properties
-        ///  dialogue.  This value is sent during teleportation.
-        /// </summary>
-        private static string _userState = "";
-
-        /// <summary>
-        ///  Field representing the Terrarium server to connect to for peer
-        ///  discovery and reporting.  This value is also used to create the
-        ///  bin directory for storing game state.
-        /// </summary>
-        private static string _webRoot = "";
 
         /// <summary>
         ///  Determines if the Terrarium Client should give a visible
@@ -263,129 +211,6 @@ namespace Terrarium.Configuration
             get { return _boundingBoxes.Getter(); }
 
             set { _boundingBoxes.Setter(value); }
-        }
-
-        /// <summary>
-        ///  Determines if features of the Network Engine are bypassed
-        ///  in order to enable NAT devices.  This turns off several
-        ///  checks that would normally stop the Terrarium Client from
-        ///  running.
-        /// </summary>
-        public static bool EnableNat
-        {
-            get { return _enableNat.Getter(); }
-
-            set { _enableNat.Setter(value); }
-        }
-
-        /// <summary>
-        ///  Specifies whether the config file or the Terrarium
-        ///  Server web service should be used for peer discovery.
-        ///  This option is used in conjunction with PeerList.
-        /// </summary>
-        public static bool UseConfigForDiscovery
-        {
-            get { return _discoveryOverride.Getter(); }
-
-            set { _discoveryOverride.Setter(value); }
-        }
-
-        /// <summary>
-        ///  Specifies a blocked version number.  A Terrarium
-        ///  Deployment Server can be used to shut-down potentially
-        ///  dangerous clients.  The user will have to remove this
-        ///  option from the config file or upgrade their client to
-        ///  continue playing.
-        /// </summary>
-        public static string BlockedVersion
-        {
-            get
-            {
-                if (_blockedVersionString.Length == 0)
-                {
-                    _blockedVersionString = GetSetting("blockedVersion");
-                }
-
-                return _blockedVersionString;
-            }
-
-            set
-            {
-                SetSetting("blockedVersion", value);
-                _blockedVersionString = value;
-            }
-        }
-
-        /// <summary>
-        ///  Specifies the Local IP Address of this host rather than retrieving
-        ///  the value from the network adapter list.
-        /// </summary>
-        public static string LocalIPAddress
-        {
-            get
-            {
-                if (_localIPAddress.Length == 0)
-                {
-                    _localIPAddress = GetSetting("localIPAddress");
-                }
-
-                return _localIPAddress;
-            }
-
-            set
-            {
-                SetSetting("localIPAddress", value);
-                _localIPAddress = value;
-            }
-        }
-
-        /// <summary>
-        ///  Specifies a comma separated value listing of peer IP
-        ///  addresses to connect to in the absence of a peer
-        ///  discovery service.  This is enabled whenever the
-        ///  discovery override option is enabled.
-        /// </summary>
-        public static string PeerList
-        {
-            get
-            {
-                if (_peerList.Length == 0)
-                {
-                    _peerList = GetSetting("peerList");
-                }
-
-                return _peerList;
-            }
-
-            set
-            {
-                SetSetting("peerList", value);
-                _peerList = value;
-            }
-        }
-
-        /// <summary>
-        ///  Used by the Terrarium Client to build the Web Service
-        ///  url's for connecting with a Terrarium server for discovery
-        ///  and reporting.
-        /// </summary>
-        public static string WebRoot
-        {
-            get
-            {
-                if (_webRoot.Length == 0)
-                {
-                    _webRoot = GetSetting("webRoot");
-                }
-
-                return _webRoot;
-            }
-
-            set
-            {
-                SetSetting("webRoot", value);
-                _webRoot = value;
-            }
         }
 
         /// <summary>
@@ -508,79 +333,6 @@ namespace Terrarium.Configuration
         }
 
         /// <summary>
-        ///  Retrieves the current country/region of the user.  This value is
-        ///  set by the user by using the Peer Properties dialogue.
-        /// </summary>
-        public static string UserCountry
-        {
-            get
-            {
-                if (_userCountry.Length == 0)
-                {
-                    _userCountry = GetSetting("country");
-                }
-
-                if (_userCountry.Length == 0 || !CountrySettings.Validate(_userCountry))
-                {
-                    _userCountry = "<Unknown>";
-                    SetSetting("country", "<Unknown>");
-                }
-
-                return _userCountry;
-            }
-
-            set
-            {
-                if (!CountrySettings.Validate(value))
-                {
-                    _userCountry = "<Unknown>";
-                    SetSetting("country", "<Unknown>");
-                    return;
-                }
-
-                SetSetting("country", value);
-                _userCountry = value;
-            }
-        }
-
-        /// <summary>
-        ///  Retrieves the current state of the user if the user is located
-        ///  within the United States.  This value is set by the Peer Properties
-        ///  dialogue.
-        /// </summary>
-        public static string UserState
-        {
-            get
-            {
-                if (_userState.Length == 0)
-                {
-                    _userState = GetSetting("state");
-                }
-
-                if (_userState.Length == 0 || !StateSettings.Validate(_userState))
-                {
-                    _userState = "<Unknown>";
-                    SetSetting("state", "<Unknown>");
-                }
-
-                return _userState;
-            }
-
-            set
-            {
-                if (!StateSettings.Validate(value))
-                {
-                    _userState = "<Unknown>";
-                    SetSetting("state", "<Unknown>");
-                    return;
-                }
-
-                SetSetting("state", value);
-                _userState = value;
-            }
-        }
-
-        /// <summary>
         ///  Retrieves the current user's email address as set in the
         ///  Peer Properties dialogue.  This value is sent in debug reports
         ///  to the server so that the user can be contacted.
@@ -648,15 +400,6 @@ namespace Terrarium.Configuration
         {
             get { return _screenSaverSpanMonitors.Getter(); }
             set { _screenSaverSpanMonitors.Setter(value); }
-        }
-
-        /// <summary>
-        /// Allows the client to skip checking the server for disabled versions.
-        /// </summary>
-        public static bool SkipVersionCheck
-        {
-            get { return _skipVersionCheck.Getter(); }
-            set { _skipVersionCheck.Setter(value); }
         }
 
         /// <summary>
