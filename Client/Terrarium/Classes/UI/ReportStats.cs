@@ -40,6 +40,12 @@ namespace Terrarium.Client
 
         private System.ComponentModel.IContainer components;
     #endregion
+
+        /// <summary>
+        ///  The data set the grid stays bound to.  Each refresh replaces its
+        ///  rows instead of binding a new data set.
+        /// </summary>
+        private DataSet reportData;
     #region Windows Form Designer generated code
         /// <summary>
         /// Required method for Designer support - do not modify
@@ -402,8 +408,25 @@ namespace Terrarium.Client
             if (GameEngine.Current != null)
             {
                 DataSet data = GameEngine.Current.PopulationData.GetCurrentReportingStats(GameEngine.Current.CurrentVector.State.StateGuid, GameEngine.Current.CurrentVector.State.TickNumber);
-                dataGrid1.DataSource = data;
-                dataGrid1.DataMember = "History";
+
+                if (reportData == null)
+                {
+                    reportData = data;
+                    dataGrid1.SetDataBinding(reportData, "History");
+                }
+                else
+                {
+                    // Binding a new data set rebuilds the grid's columns and
+                    // removes the cell editor; if that editor has focus, the
+                    // grid then tries to edit row 0, which an empty report
+                    // doesn't have.  Swapping the rows in place avoids that.
+                    DataTable history = reportData.Tables["History"];
+                    history.BeginLoadData();
+                    history.Clear();
+                    history.Merge(data.Tables["History"]);
+                    history.EndLoadData();
+                }
+
                 this.Invalidate();
             }
         }
