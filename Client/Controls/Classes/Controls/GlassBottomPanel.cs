@@ -271,6 +271,8 @@ namespace Terrarium.Forms
 			controlsToolTip.SetToolTip(this.statisticsButton, "Open the statistics window for your Terrarium.");
 			controlsToolTip.SetToolTip(this.traceButton, "Open the diagnostic trace window.");
 
+			controlsToolTip.SetToolTip(this.introduceAnimalTerrariumButton, "Introduce an animal or plant from its assembly (.dll).");
+			controlsToolTip.SetToolTip(this.addAnimalButton, "Add more of the species selected in the list.");
 			controlsToolTip.SetToolTip(this.newTerrariumButton, "Create a new Terrarium.");
 			controlsToolTip.SetToolTip(this.loadTerrariumButton, "Load an existing Terrarium.");
 
@@ -592,7 +594,6 @@ namespace Terrarium.Forms
             this.addAnimalButton.Depth = 4;
             this.addAnimalButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.addAnimalButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.addAnimalButton.Enabled = false;
             this.addAnimalButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.addAnimalButton.ForeColor = System.Drawing.Color.White;
             this.addAnimalButton.Highlight = false;
@@ -621,7 +622,6 @@ namespace Terrarium.Forms
             this.introduceAnimalTerrariumButton.Depth = 4;
             this.introduceAnimalTerrariumButton.DisabledGradient.Bottom = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.introduceAnimalTerrariumButton.DisabledGradient.Top = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.introduceAnimalTerrariumButton.Enabled = false;
             this.introduceAnimalTerrariumButton.Font = new System.Drawing.Font("Verdana", 6.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.introduceAnimalTerrariumButton.ForeColor = System.Drawing.Color.White;
             this.introduceAnimalTerrariumButton.Highlight = false;
