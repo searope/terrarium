@@ -787,26 +787,15 @@ namespace Terrarium.Game
         /// <returns>A species object for the new organism.</returns>
         public Species AddNewOrganism(String assemblyPath, Point preferredLocation, Boolean reintroduction)
         {
-            string fullPath = Path.GetFullPath(assemblyPath);
-            string reportPath = Path.Combine(GameConfig.ApplicationDirectory, Guid.NewGuid() + ".xml");
-            int validAssembly = PrivateAssemblyCache.checkAssemblyWithReporting(fullPath, reportPath);
-
-            if (validAssembly == 0)
-            {
-                throw OrganismAssemblyFailedValidationException.GenerateExceptionFromXml(reportPath);
-            }
-
-            if (File.Exists(reportPath))
-            {
-                File.Delete(reportPath);
-            }
-
             if (new FileInfo(assemblyPath).Length > (100*1024))
             {
                 throw new GameEngineException(
                     "Your organism is greater than 100k in size.  Please try to reduce the size of your assembly.");
             }
             byte[] asm = File.ReadAllBytes(assemblyPath);
+
+            // Check what the creature's code uses before any of it can run
+            PrivateAssemblyCache.VerifyAssembly(asm);
 
             // Load the debugging information if it exists
             byte[] asmSymbols = null;
@@ -815,12 +804,21 @@ namespace Terrarium.Game
                 asmSymbols = File.ReadAllBytes(Path.ChangeExtension(assemblyPath, ".pdb"));
             }
 
-            // Actually load the assembly from the bytes
+            // Load the assembly from the bytes into a throwaway context to check
+            // its species; the cache loads it for real once it's saved there
             Species newSpecies;
-            Assembly organismAssembly;
+            string organismAssemblyName;
+            var inspection = new CreatureLoadContext("Inspecting " + Path.GetFileName(assemblyPath),
+                                                     PrivateAssemblyCache.ResolveSharedAssembly, true);
             try
             {
-                organismAssembly = asmSymbols != null ? Assembly.Load(asm, asmSymbols) : Assembly.Load(asm);
+                Assembly organismAssembly;
+                using (var assemblyStream = new MemoryStream(asm))
+                using (var symbolStream = asmSymbols != null ? new MemoryStream(asmSymbols) : null)
+                {
+                    organismAssembly = inspection.LoadFromStream(assemblyStream, symbolStream);
+                }
+                organismAssemblyName = organismAssembly.FullName;
 
                 // Make sure organism isn't signed with Terrarium key (e.g. has full trust)
                 if (SecurityUtils.AssemblyHasTerrariumKey(organismAssembly.GetName()))
@@ -830,11 +828,11 @@ namespace Terrarium.Game
 
                 newSpecies = Species.GetSpeciesFromAssembly(organismAssembly);
             }
-                // Catch two common fusion errors that occur if you build against the wrong
+                // Catch two common loading errors that occur if you build against the wrong
                 // organismbase.dll
             catch (FileNotFoundException e)
             {
-                if (Path.GetFileName(e.FileName).ToLower(CultureInfo.InvariantCulture) == "organismbase.dll")
+                if (IsOrganismBase(e.FileName))
                 {
                     throw new GameEngineException(
                         "Your organism is built against the wrong version of organismbase.dll.  Build using the version in '" +
@@ -844,23 +842,27 @@ namespace Terrarium.Game
             }
             catch (FileLoadException e)
             {
-                if (Path.GetFileName(e.FileName).ToLower(CultureInfo.InvariantCulture).StartsWith("organismbase"))
+                if (IsOrganismBase(e.FileName))
                 {
                     throw new GameEngineException(
-                        "The organism was built using a different version of organismbase.dll than the current client.  You may need to change servers to one that supports the build of the client you are running.");
+                        "The organism was built using a different version of organismbase.dll than the current client.  Build it against the OrganismBase.dll that comes with this version of Terrarium.");
                 }
                 throw;
             }
             catch (BadImageFormatException)
             {
                 throw new GameEngineException(
-                    "Your organism doesn't appear to be a valid .NET Framework assembly.  It is possible you're loading an old assembly.");
+                    "Your organism doesn't appear to be a valid .NET assembly.  It is possible you're loading an old assembly.");
+            }
+            finally
+            {
+                inspection.Unload();
             }
 
-            if (!_pac.Exists(organismAssembly.FullName))
+            if (!_pac.Exists(organismAssemblyName))
             {
                 _pac.SaveOrganismAssembly(assemblyPath, Path.ChangeExtension(assemblyPath, ".pdb"),
-                                         organismAssembly.FullName);
+                                         organismAssemblyName);
             }
             else if (!reintroduction)
             {
@@ -872,7 +874,7 @@ namespace Terrarium.Game
                     "Organism assemblies can only be introduced once into a Terrarium. \r\n - If you are just trying to add more of these animals, select your animal in the 'Species' dropdown below and push the 'add' button.\r\n - If you are developing an animal and have a new assembly to try, create a new terrarium and introduce it there.");
             }
 
-            newSpecies = Species.GetSpeciesFromAssembly(_pac.LoadOrganismAssembly(organismAssembly.FullName));
+            newSpecies = Species.GetSpeciesFromAssembly(_pac.LoadOrganismAssembly(organismAssemblyName));
 
             for (int i = 0; i < 10; i++)
             {
@@ -880,6 +882,14 @@ namespace Terrarium.Game
             }
 
             return newSpecies;
+        }
+
+        // The name in a load error is a file name on .NET Framework and an
+        // assembly name on modern .NET
+        private static bool IsOrganismBase(string fileName)
+        {
+            return fileName != null &&
+                   Path.GetFileName(fileName).StartsWith("organismbase", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

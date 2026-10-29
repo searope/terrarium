@@ -8,4 +8,7 @@
     <Project Path="Client/OrganismBase/OrganismBase.csproj" Id="692fc657-3eaa-4ef9-b10f-3558a7e5916d" />
     <Project Path="Client/Renderer/Renderer.csproj" Id="228fd808-f488-426e-9015-f5557ad44a40" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Client/Terrarium.Tests/Terrarium.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Security;
 using OrganismBase;
 using Terrarium.Configuration;
+using Terrarium.Hosting;
 using Terrarium.Tools;
 
 namespace Terrarium.Game
@@ -31,6 +33,16 @@ namespace Terrarium.Game
         private Hashtable _hsh;
         private long _pacSize;
         private bool _trackLastRun = true;
+
+        /// <summary>
+        ///  Loads this cache's creature assemblies.
+        /// </summary>
+        [NonSerialized] private CreatureLoadContext _loadContext;
+
+        /// <summary>
+        ///  The creature assemblies loaded so far, by short name.
+        /// </summary>
+        [NonSerialized] private Dictionary<string, Assembly> _loaded;
 
         /// <summary>
         ///  Initializes a versioned directory preamble used to create
@@ -163,6 +175,8 @@ namespace Terrarium.Game
 
             _dataFile = Path.GetFileName(dataFile);
             _hsh = new Hashtable();
+            _loaded = new Dictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
+            _loadContext = new CreatureLoadContext("Creatures in " + _dataFile, ResolveCreatureReference, false);
 
             if (!Directory.Exists(BaseAssemblyDirectory))
             {
@@ -332,9 +346,26 @@ namespace Terrarium.Game
                 _pacSize += new FileInfo(GetFileName(fullName)).Length;
             }
 
-            // Make sure we can't be hacked to load a bogus assembly by only allowing our code
-            // to access files in the assembly directory.
-            var organismAssembly = Assembly.LoadFile(GetFileName(fullName));
+            // GetFileName only returns files inside the assembly directory, so a
+            // bogus name can't load an assembly from anywhere else
+            var shortName = GetAssemblyShortName(fullName);
+            Assembly organismAssembly;
+            lock (_loaded)
+            {
+                if (!_loaded.TryGetValue(shortName, out organismAssembly))
+                {
+                    // Load from memory so the file isn't locked: blacklisting
+                    // replaces it with an empty file
+                    var fileName = GetFileName(fullName);
+                    var symbols = Path.ChangeExtension(fileName, ".pdb");
+                    using (var assembly = new MemoryStream(File.ReadAllBytes(fileName)))
+                    using (var pdb = File.Exists(symbols) ? new MemoryStream(File.ReadAllBytes(symbols)) : null)
+                    {
+                        organismAssembly = _loadContext.LoadFromStream(assembly, pdb);
+                    }
+                    _loaded[shortName] = organismAssembly;
+                }
+            }
 
             return organismAssembly;
         }
@@ -431,18 +462,7 @@ namespace Terrarium.Game
                 return;
             }
 
-            var reportPath = Path.Combine(GameConfig.ApplicationDirectory, Guid.NewGuid() + ".xml");
-            var validAssembly = checkAssemblyWithReporting(assemblyPath, reportPath);
-
-            if (validAssembly == 0)
-            {
-                throw OrganismAssemblyFailedValidationException.GenerateExceptionFromXml(reportPath);
-            }
-
-            if (File.Exists(reportPath))
-            {
-                File.Delete(reportPath);
-            }
+            VerifyAssembly(File.ReadAllBytes(assemblyPath));
 
             var sourceStream = File.OpenRead(assemblyPath);
             FileStream symStream = null;
@@ -550,8 +570,9 @@ namespace Terrarium.Game
                 if (Path.GetExtension(fileName).ToLower(CultureInfo.InvariantCulture) != ".dll") continue;
                 var info = new FileInfo(fileName);
                 if (info.Length <= 0) continue;
-                var assembly = Assembly.LoadFrom(fileName);
-                infoList.Add(new OrganismAssemblyInfo(assembly.FullName, GetAssemblyShortName(assembly.FullName)));
+                // Read the name without loading the assembly
+                var fullName = AssemblyName.GetAssemblyName(fileName).FullName;
+                infoList.Add(new OrganismAssemblyInfo(fullName, GetAssemblyShortName(fullName)));
             }
 
             return (OrganismAssemblyInfo[]) infoList.ToArray(typeof (OrganismAssemblyInfo));
@@ -609,7 +630,8 @@ namespace Terrarium.Game
                 return matchAssembly;
             }
 
-            // See if it is an organism assembly
+            // See if it is an organism assembly; Type.GetType on the creature
+            // types named in save files and species gets here
 
             // Since .NET 4 this event is also raised for satellite resource
             // assemblies (Controls.resources and the like) and generated
@@ -671,9 +693,40 @@ namespace Terrarium.Game
         /// <summary>
         ///  Used for assembly validation with XML reporting in AsmCheck
         /// </summary>
-        internal static int checkAssemblyWithReporting(string assemblyName, string xmlFile)
+        internal static void VerifyAssembly(byte[] assembly)
         {
-            return 1;
+            var problems = CreatureVerifier.Verify(assembly);
+            if (problems.Count != 0)
+            {
+                throw new OrganismAssemblyFailedValidationException(problems);
+            }
+        }
+
+        /// <summary>
+        ///  Resolves an assembly a creature references: the game's own
+        ///  OrganismBase and Game assemblies, or another assembly in this
+        ///  cache.  Returns null to let the default context resolve it (the
+        ///  .NET base library).
+        /// </summary>
+        internal Assembly ResolveCreatureReference(AssemblyName name)
+        {
+            var shared = ResolveSharedAssembly(name);
+            if (shared != null)
+            {
+                return shared;
+            }
+
+            return File.Exists(GetFileName(name.FullName)) ? LoadOrganismAssembly(name.FullName) : null;
+        }
+
+        /// <summary>
+        ///  Returns the game's copy of OrganismBase or Game when a creature
+        ///  references a compatible version of it, or null otherwise.
+        /// </summary>
+        internal static Assembly ResolveSharedAssembly(AssemblyName name)
+        {
+            return getAssemblyWithTerrariumBindingPolicy(name.FullName, typeof (Animal).Assembly) ??
+                   getAssemblyWithTerrariumBindingPolicy(name.FullName, typeof (PrivateAssemblyCache).Assembly);
         }
     }
 }

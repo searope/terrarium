@@ -39,30 +39,48 @@ namespace Terrarium.Hosting
         // of kernel time, we still restart the game, we just don't permanently blacklist them.
         private const int AnimalDeadlockRetries = 3;
 
+        // How long an organism's turn may take before it is removed from the game.
+        // Overrunning the quantum a little is handled by skipping turns; this is for
+        // organisms that don't return at all.
+        private const int TurnTimeLimitMSec = 1000;
+
         private const int ReportInterval = 150;
-        private readonly Thread _activationThread;
-        private readonly ManualResetEvent _animalDone = new ManualResetEvent(false);
-        private readonly ManualResetEvent _animalReady = new ManualResetEvent(false);
-        private readonly ManualResetEvent _handleRetrieved = new ManualResetEvent(false);
-        private readonly TimeMonitor _monitor = new TimeMonitor();
         private readonly IntPtr _processHandle;
-        private OrganismWrapper _bug;
         private GameEngine _currentEngine;
-        private bool _exitAnimalThread;
         private Int64 _lastReport;
         private GameObjectCollection _organisms;
         private int _organismsActivated;
         private IEnumerator _orgEnum;
         private PrivateAssemblyCache _pac;
         private Boolean _penalizeForTime = true;
-        private bool _safeToAbort;
-        private IntPtr _threadHandle;
-        private bool _threadHandleValid;
-        private Timer _threadTimer;
         private int _tickCount;
         private int _ticksToSuspendBlacklisting;
-        private DateTime _timerStoppedTime = DateTime.MinValue;
         private Int64 _totalActivations;
+
+        /// <summary>
+        ///  The thread that runs organisms' turns right now.
+        /// </summary>
+        private ActivationWorker _worker;
+
+        /// <summary>
+        ///  A thread that runs organisms' turns, one at a time, and the events
+        ///  used to hand it the next organism.  Modern .NET can't abort a thread,
+        ///  so when an organism doesn't return in time its worker is abandoned:
+        ///  it is marked so it never touches the game again, and a new worker
+        ///  takes over.
+        /// </summary>
+        private sealed class ActivationWorker
+        {
+            public readonly ManualResetEvent Done = new ManualResetEvent(false);
+            public readonly ManualResetEvent HandleRetrieved = new ManualResetEvent(false);
+            public readonly ManualResetEvent Ready = new ManualResetEvent(false);
+            public volatile bool Abandoned;
+            public OrganismWrapper Bug;
+            public volatile bool Exit;
+            public Thread Thread;
+            public IntPtr ThreadHandle;
+            public bool ThreadHandleValid;
+        }
 
         public GameScheduler()
         {
@@ -81,14 +99,24 @@ namespace Terrarium.Hosting
             _processHandle = GetCurrentProcess();
 
             // Create a thread other than the UI thread to run the animals on
-            _activationThread = new Thread(ActivateBug) {Priority = ThreadPriority.AboveNormal};
-            _activationThread.Start();
+            StartWorker();
+        }
 
-            // Wait for the ActivateBug routine to get far enough to 
+        private void StartWorker()
+        {
+            var worker = new ActivationWorker();
+
+            // Background, so an abandoned worker still stuck in organism code
+            // doesn't keep the process alive
+            worker.Thread = new Thread(ActivateBug) {Priority = ThreadPriority.AboveNormal, IsBackground = true};
+            worker.Thread.Start(worker);
+
+            // Wait for the ActivateBug routine to get far enough to
             // retreive its threadhandle which is needed to get accurate
             // timings on how much time the animal actually used on its thread.
-            var success = _handleRetrieved.WaitOne();
+            var success = worker.HandleRetrieved.WaitOne();
             Debug.Assert(success);
+            _worker = worker;
         }
 
         public Boolean DetectDeadlock
@@ -127,16 +155,16 @@ namespace Terrarium.Hosting
 
         public void Close()
         {
-            if (_threadHandleValid)
+            var worker = _worker;
+            if (worker.ThreadHandleValid)
             {
-                CloseHandle(_threadHandle);
+                CloseHandle(worker.ThreadHandle);
+                worker.ThreadHandleValid = false;
             }
 
             // Tell the ActivateBug routine to go ahead and exit the thread.
-            _exitAnimalThread = true;
-            _animalReady.Set();
-
-            _threadHandleValid = false;
+            worker.Exit = true;
+            worker.Ready.Set();
         }
 
         // Called by the game engine when it is time to give a set of animals slices of time
@@ -189,7 +217,7 @@ namespace Terrarium.Hosting
         }
 
         // This is our last line of defense to deal with animals that try to hang the game (deadlock). 
-        // (the first line of defense is ThreadAborting the thread with our timer, see description in ActivateBug()).
+        // (the first line of defense is abandoning the thread after TurnTimeLimitMSec, see description in ActivateBug()).
         // Thus, it must have robust code that can always fail in some graceful way, and should blacklist
         // any animal that hangs. Because blacklisting an animal is very drastic, we go through great pains
         // to do it fairly, which means that we want to ensure that the animal is getting actual time to run
@@ -376,18 +404,35 @@ namespace Terrarium.Hosting
             var blacklist = false;
             var shutdownWithoutBlacklist = false;
 
-            // Hand the activationThread an animal and kick off processing
-            _bug = currentAnimal;
-            var validTime = getAnimalThreadTime(out kernelStart, out userStart);
-            _animalDone.Reset();
-            _animalReady.Set();
+            // Hand the activation thread an animal and kick off processing
+            var worker = _worker;
+            worker.Bug = currentAnimal;
+            var validTime = getAnimalThreadTime(worker, out kernelStart, out userStart);
+            worker.Done.Reset();
+            worker.Ready.Set();
 
-            // Now we spin in a loop and periodically check to see if the animal returned the thread to us.
+            if (worker.Done.WaitOne(TurnTimeLimitMSec, false))
+            {
+                return;
+            }
+
+            // The organism hasn't returned in time.  When timings count (they
+            // don't while the trace window is open or a debugger is attached),
+            // leave it running on its thread, remove it from the game and carry
+            // on with a new thread.
+            if (PenalizeForTime && !Debugger.IsAttached)
+            {
+                AbandonWorker(worker, currentAnimal);
+                return;
+            }
+
+            // Otherwise wait for the animal, periodically checking whether it has
+            // hung the thread for good.
             while (true)
             {
-                // If the animal returns, _animalDone will get set on the activation thread and we'll continue.
+                // If the animal returns, Done will get set on the activation thread and we'll continue.
                 // if not, this will timeout.
-                var executionDone = _animalDone.WaitOne(AnimalDeadlockCheckMSec, false);
+                var executionDone = worker.Done.WaitOne(AnimalDeadlockCheckMSec, false);
 
                 if (!executionDone)
                 {
@@ -396,19 +441,17 @@ namespace Terrarium.Hosting
 
                     if (DetectDeadlock)
                     {
-                        // If we were unable to retreive the time from getAnimalThreadTime() above, just wait 
+                        // If we were unable to retreive the time from getAnimalThreadTime() above, just wait
                         // for the full number of tries
                         if (validTime)
                         {
-                            // Only permanently blacklist the animal if we are first trying to threadabort them 
-                            // (PenalizeForTime == true) Otherwise, animals that really won't hang the machine will
-                            // get permanently blacklisted even though they could have been stopped with a threadabort.
-                            // PenalizeForTime is only false when the tracewindow is up since it affects animal timings
+                            // Only permanently blacklist the animal if we are penalizing for time.  PenalizeForTime
+                            // is only false when the tracewindow is up since it affects animal timings
                             if (PenalizeForTime)
                             {
                                 Int64 kernelStop;
                                 Int64 userStop;
-                                validTime = getAnimalThreadTime(out kernelStop, out userStop);
+                                validTime = getAnimalThreadTime(worker, out kernelStop, out userStop);
                                 if (validTime)
                                 {
                                     var totalTime = (kernelStop - kernelStart) + (userStop - userStart);
@@ -445,7 +488,7 @@ namespace Terrarium.Hosting
                         if (tries >= AnimalDeadlockRetries)
                         {
                             // If we've tried this many times and got to this point, either the animal never got
-                            // a lot of actual kernel time, or we're not penalizing for time (the user has the debugger attached, 
+                            // a lot of actual kernel time, or we're not penalizing for time (the user has the debugger attached,
                             // or trace window open, for example). Don't blacklist them, but go ahead and restart the game
                             Trace.WriteLine(
                                 string.Format(
@@ -468,6 +511,53 @@ namespace Terrarium.Hosting
 
             handleRestartsAndBlacklist(currentAnimal, blacklist);
             handleRestartWithoutBlacklist(blacklist, shutdownWithoutBlacklist);
+        }
+
+        // Gives up on a worker whose organism didn't return in time.  The organism
+        // is removed along with the rest of its species, which runs the same code
+        // and would hang a new thread on its next turn, and the species is
+        // blacklisted so it isn't loaded again.  The abandoned thread stays stuck
+        // in the organism's code until it returns or the game exits.
+        private void AbandonWorker(ActivationWorker worker, OrganismWrapper hungAnimal)
+        {
+            worker.Abandoned = true;
+            try
+            {
+                worker.Thread.Priority = ThreadPriority.Lowest;
+            }
+            catch (ThreadStateException)
+            {
+                // It finished after all
+            }
+
+            if (worker.ThreadHandleValid)
+            {
+                CloseHandle(worker.ThreadHandle);
+                worker.ThreadHandleValid = false;
+            }
+
+            var hungAssembly = hungAnimal.Organism.GetType().Assembly;
+            var species = (Species) CurrentState.GetOrganismState(hungAnimal.Organism.ID).Species;
+            Trace.WriteLine("Organism " + hungAnimal.Organism.ID + " (" + species.Name +
+                            ") didn't finish its turn in " + TurnTimeLimitMSec + " mSec; removing its species.");
+
+            foreach (OrganismWrapper wrapper in _organisms)
+            {
+                if (wrapper.Active && wrapper.Organism.GetType().Assembly == hungAssembly)
+                {
+                    wrapper.Active = false;
+                    _currentEngine.RemoveOrganismQueued(new KilledOrganism(wrapper.Organism.ID,
+                                                                           PopulationChangeReason.Timeout));
+                }
+            }
+
+            _currentEngine.Pac.BlacklistAssemblies(new[] {species.AssemblyInfo.FullName});
+            _currentEngine.OnEngineStateChanged(new EngineStateChangedEventArgs(
+                                                    EngineStateChangeType.Other,
+                                                    "'" + species.Name + "' was removed for taking too long.",
+                                                    "'" + species.Name + "' was removed from the Terrarium because one of them didn't finish its turn in time."));
+
+            StartWorker();
         }
 
         private static void handleRestartWithoutBlacklist(bool blacklist, bool shutdownWithoutBlacklist)
@@ -493,39 +583,37 @@ namespace Terrarium.Hosting
             }
         }
 
-        // This routine is run on the activationThread.  It just waits until a new animal is ready to
-        // be run and then runs it and waits again.  There are two ways we attempt to mitigate the 
+        // This routine is run on an activation thread.  It just waits until a new animal is ready to
+        // be run and then runs it and waits again.  There are two ways we attempt to mitigate the
         // fact that an animal may not want to return execution and hang the machine:
-        // 
-        // 1. The threadTimer timer is started before we start executing animal code, and 
-        //      if the animal takes too long, the _threadTimer will fire and run a routine
-        //      that calls ThreadAbort on this thread. There are ways for animals to hog the
-        //      thread such that this won't ever get a chance to abort them.  See #2 for 
-        //      mitigation of this.
-        // 2. The RunAnimalWithDeadlockDetection() is what actually feeds animals into the
-        //      ActivateBug() routine.  RunAnimalWithDeadlockDetection() provides the next
-        //      circle of protection by monitoring the thread with a much longer duration.
-        //      if the thread never comes back (which means that ThreadAbort must be failing)
-        //      then RunAnimalWithDeadlockDetection() will restart the game and permanently
-        //      blacklist the animal.
-        internal void ActivateBug()
+        //
+        // 1. RunAnimalWithDeadlockDetection() waits TurnTimeLimitMSec for the turn.  If the
+        //      animal hasn't returned, its species is removed and this thread abandoned: it
+        //      is left to finish (or not) on its own and never touches the game again.
+        // 2. When timings don't count (trace window open), RunAnimalWithDeadlockDetection()
+        //      keeps waiting with a much longer duration, and if the thread never comes back
+        //      it restarts the game and permanently blacklists the animal.
+        internal void ActivateBug(object state)
         {
-            // First retreive the thread handle for this thread so we can get accurate reads on how 
-            // much actual time an animal spent executing.  
+            var worker = (ActivationWorker) state;
+            var monitor = new TimeMonitor();
+
+            // First retreive the thread handle for this thread so we can get accurate reads on how
+            // much actual time an animal spent executing.
             // This is a pseudo handle that can't be used on other threads until it is duplicated
             var pseudoThreadHandle = GetCurrentThread();
-            _threadHandleValid = DuplicateHandle(
+            worker.ThreadHandleValid = DuplicateHandle(
                 _processHandle, // handle to source process
                 pseudoThreadHandle, // handle to duplicate
                 _processHandle, // handle to target process
-                ref _threadHandle, // duplicate handle
+                ref worker.ThreadHandle, // duplicate handle
                 0, // requested access
                 false, // handle inheritance option
                 2 // optional actions
                 );
 
-            // Notify the constructor of this class that we have retreived the handle.
-            var setSuccess = _handleRetrieved.Set();
+            // Notify StartWorker that we have retreived the handle.
+            var setSuccess = worker.HandleRetrieved.Set();
             Debug.Assert(setSuccess);
 
             // If we get an exception that somehow happens outside the try blocks below, it will end this thread,
@@ -534,12 +622,13 @@ namespace Terrarium.Hosting
             while (true)
             {
                 // Wait for the first animal
-                _animalReady.WaitOne();
-                if (_exitAnimalThread)
+                worker.Ready.WaitOne();
+                if (worker.Exit)
                 {
                     return;
                 }
 
+                var bug = worker.Bug;
                 var success = false;
                 Int64 duration = 0;
                 var deathReason = PopulationChangeReason.NotDead;
@@ -547,227 +636,156 @@ namespace Terrarium.Hosting
                 var skippedTurn = false;
 
                 // short circut inactive bugs
-                if (_bug.Active)
+                if (bug.Active)
                 {
-                    var state = CurrentState.GetOrganismState(_bug.Organism.ID);
-                    if (!state.IsAlive)
+                    var state2 = CurrentState.GetOrganismState(bug.Organism.ID);
+                    if (!state2.IsAlive)
                     {
-                        _bug.Active = false;
+                        bug.Active = false;
                     }
                     else
                     {
                         try
                         {
-                            try
+                            // See if the animal has consistently taken too much time and has finally
+                            // gone over the maxAllowance.
+                            if (bug.Overage > MaxAllowance)
                             {
-                                // See if the animal has consistently taken too much time and has finally
-                                // gone over the maxAllowance.
-                                if (_bug.Overage > MaxAllowance)
-                                {
-                                    Trace.WriteLine("Organism blacklisted: bug.Overage > _maxAllowance");
-                                    deathReason = PopulationChangeReason.Timeout;
-                                    _bug.Active = false;
-                                }
-                                else if (_bug.Overage > MaxOverage)
-                                {
-                                    // if the bug is overtime, don't schedule it
-                                    // but deduce one quantum from its overage
-                                    // until it's back under the allowable limit
-                                    _bug.Overage -= Quantum;
-                                    if (_bug.Overage < 0)
-                                    {
-                                        _bug.Overage = 0;
-                                    }
-
-                                    // We still need to call InternalMain with "true" so that it can clear
-                                    // out state for event handlers.  This won't run organism code
-                                    _bug.Organism.InternalMain(true);
-
-                                    _bug.Organism.WriteTrace(
-                                        "Animal's turn was skipped because they took longer than " +
-                                        Quantum + " microseconds for their turn too many times.");
-
-                                    // We didn't fail, we're just skipping them.  Don't remove them from the world.
-                                    success = true;
-                                    skippedTurn = true;
-                                }
-                                else
-                                {
-                                    // Start the thread that will ensure we ThreadAbort if the elapsed
-                                    // time the animal takes is too long.
-                                    startTimer();
-
-                                    // Time the animal
-                                    _monitor.Start();
-
-                                    // Tell the timer thread it is OK to abort in this section
-                                    // If a ThreadAbort exception gets thrown from after this lock statement on down to 
-                                    // safeToAbort = false, we won't shut off safeToAbort and we could abort again in the 
-                                    // catch handlers which is why we are wrapped with another try  / catch block
-                                    lock (_monitor)
-                                    {
-                                        _safeToAbort = true;
-                                    }
-
-                                    // Hook up the tracing event handler if the animal is selected
-                                    if (GameConfig.LoggingMode != "None")
-                                    {
-                                        if (GameConfig.LoggingMode != "Full")
-                                        {
-                                            var renderInfo = _bug.Organism.State.RenderInfo;
-                                            if (renderInfo != null && ((TerrariumSprite) renderInfo).Selected)
-                                            {
-                                                _bug.Organism.Trace += traceEventHandler;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            _bug.Organism.Trace += traceEventHandler;
-                                        }
-                                    }
-
-                                    // Actually allow the animal to run their code now.
-                                    _bug.Organism.InternalMain(false);
-
-                                    // Tell the timer thread it is not OK to abort anymore
-                                    // If we get aborted before this can complete, the aborter will 
-                                    // set this to false as well
-                                    lock (_monitor)
-                                    {
-                                        _safeToAbort = false;
-                                    }
-
-                                    cancelTimer();
-
-                                    // Determine how much time the animal spent
-                                    duration = _monitor.EndGetMicroseconds();
-
-                                    // This means we weren't aborted or didn't throw an exception
-                                    success = true;
-                                }
-                            }
-                            catch (ThreadAbortException)
-                            {
-                                // If we get aborted, the aborter will set safeToAbort to false so no need 
-                                // to do it here
+                                Trace.WriteLine("Organism blacklisted: bug.Overage > _maxAllowance");
                                 deathReason = PopulationChangeReason.Timeout;
-                                Trace.WriteLine("Inner Try ThreadAborted");
-                                Thread.ResetAbort();
-                                Trace.WriteLine("Cancelling Timer");
-                                cancelTimer();
+                                bug.Active = false;
                             }
-                            catch (SecurityException e)
+                            else if (bug.Overage > MaxOverage)
                             {
-                                // Tell the timer thread it is not OK to abort anymore
-                                // If we get aborted before this can complete, the aborter will set this
-                                // to false as well
-                                lock (_monitor)
+                                // if the bug is overtime, don't schedule it
+                                // but deduce one quantum from its overage
+                                // until it's back under the allowable limit
+                                bug.Overage -= Quantum;
+                                if (bug.Overage < 0)
                                 {
-                                    _safeToAbort = false;
+                                    bug.Overage = 0;
                                 }
 
-                                cancelTimer();
+                                // We still need to call InternalMain with "true" so that it can clear
+                                // out state for event handlers.  This won't run organism code
+                                bug.Organism.InternalMain(true);
 
-                                // Organism needs to be removed from the game because it had an exception
-                                deathReason = PopulationChangeReason.SecurityViolation;
-                                exceptionInfo = e.ToString();
+                                bug.Organism.WriteTrace(
+                                    "Animal's turn was skipped because they took longer than " +
+                                    Quantum + " microseconds for their turn too many times.");
+
+                                // We didn't fail, we're just skipping them.  Don't remove them from the world.
+                                success = true;
+                                skippedTurn = true;
                             }
-                            catch (OrganismBlacklistedException)
+                            else
                             {
-                                // This exception gets thrown when we try to give a time slice to an animal
-                                // that has been replaced by the special TerrariumOrganism, whose whole purpose
-                                // is to just replace a blacklisted animal until it is safe to remove them
-                                // from the game, which is now.
+                                // Time the animal
+                                monitor.Start();
 
-                                // Tell the timer thread it is not OK to abort anymore
-                                // If we get aborted before this can complete, the aborter will set this
-                                // to false as well
-                                lock (_monitor)
+                                // Hook up the tracing event handler if the animal is selected
+                                if (GameConfig.LoggingMode != "None")
                                 {
-                                    _safeToAbort = false;
+                                    if (GameConfig.LoggingMode != "Full")
+                                    {
+                                        var renderInfo = bug.Organism.State.RenderInfo;
+                                        if (renderInfo != null && ((TerrariumSprite) renderInfo).Selected)
+                                        {
+                                            bug.Organism.Trace += traceEventHandler;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        bug.Organism.Trace += traceEventHandler;
+                                    }
                                 }
 
-                                cancelTimer();
+                                // Actually allow the animal to run their code now.
+                                bug.Organism.InternalMain(false);
 
-                                deathReason = PopulationChangeReason.OrganismBlacklisted;
-                            }
-                            catch (Exception e)
-                            {
-                                // Tell the timer thread it is not OK to abort anymore
-                                // If we get aborted before this can complete, the aborter will set this
-                                // to false as well
-                                lock (_monitor)
-                                {
-                                    _safeToAbort = false;
-                                }
+                                // Determine how much time the animal spent
+                                duration = monitor.EndGetMicroseconds();
 
-                                cancelTimer();
-
-                                // Organism needs to be removed from the game because it had an exception
-                                deathReason = PopulationChangeReason.Error;
-                                exceptionInfo = e.ToString();
+                                // This means we didn't throw an exception
+                                success = true;
                             }
                         }
-                        catch (ThreadAbortException)
+                        catch (SecurityException e)
                         {
-                            // if we catch the abort here in the outer of the two try blocks, there was an exception, 
-                            // but we lost it since the threadabort happened in the catch handler
-                            if (deathReason == PopulationChangeReason.NotDead)
-                            {
-                                deathReason = PopulationChangeReason.Error;
-                                exceptionInfo = "Exception was lost because organism timed out before we could grab it.";
-                            }
-                            Thread.ResetAbort();
-                            Trace.WriteLine("Outer Try ThreadAborted");
+                            // Organism needs to be removed from the game because it had an exception
+                            deathReason = PopulationChangeReason.SecurityViolation;
+                            exceptionInfo = e.ToString();
+                        }
+                        catch (OrganismBlacklistedException)
+                        {
+                            // This exception gets thrown when we try to give a time slice to an animal
+                            // that has been replaced by the special TerrariumOrganism, whose whole purpose
+                            // is to just replace a blacklisted animal until it is safe to remove them
+                            // from the game, which is now.
+                            deathReason = PopulationChangeReason.OrganismBlacklisted;
+                        }
+                        catch (Exception e)
+                        {
+                            // Organism needs to be removed from the game because it had an exception
+                            deathReason = PopulationChangeReason.Error;
+                            exceptionInfo = e.ToString();
                         }
                         finally
                         {
-                            _bug.Organism.Trace -= traceEventHandler;
-                            if (!success)
+                            bug.Organism.Trace -= traceEventHandler;
+                        }
+
+                        // An abandoned worker's organism has already been removed, and the
+                        // game has moved on to other organisms on a new worker
+                        if (worker.Abandoned)
+                        {
+                            return;
+                        }
+
+                        if (!success)
+                        {
+                            // Organism needs to be removed from the game because it had an exception
+                            if (deathReason == PopulationChangeReason.Timeout)
                             {
-                                // Organism needs to be removed from the game because it had an exception
-                                if (deathReason == PopulationChangeReason.Timeout)
+                                _currentEngine.RemoveOrganismQueued(new KilledOrganism(bug.Organism.ID, deathReason));
+                            }
+                            else
+                            {
+                                // The organism threw an exception
+                                _currentEngine.RemoveOrganismQueued(new KilledOrganism(bug.Organism.ID, deathReason,
+                                                                                       exceptionInfo));
+                                Trace.WriteLine("Exception in Animal: \r\n" + exceptionInfo);
+                            }
+                        }
+                        else
+                        {
+                            _totalActivations++;
+                            if (PenalizeForTime)
+                            {
+                                bug.TotalTime += duration;
+                                bug.LastTime = duration;
+                                if (duration > Quantum)
                                 {
-                                    _currentEngine.RemoveOrganismQueued(new KilledOrganism(_bug.Organism.ID, deathReason));
+                                    bug.Overage += (duration - Quantum);
                                 }
-                                else
+                                else if (bug.Overage > 0 && !skippedTurn)
                                 {
-                                    // The organism threw an exception
-                                    _currentEngine.RemoveOrganismQueued(new KilledOrganism(_bug.Organism.ID, deathReason,
-                                                                                           exceptionInfo));
-                                    Trace.WriteLine("Exception in Animal: \r\n" + exceptionInfo);
+                                    // If the animal ran under time, subtract this off of
+                                    // their overage
+                                    bug.Overage -= (Quantum - duration);
+                                    if (bug.Overage < 0)
+                                    {
+                                        bug.Overage = 0;
+                                    }
                                 }
                             }
                             else
                             {
-                                _totalActivations++;
-                                if (PenalizeForTime)
-                                {
-                                    _bug.TotalTime += duration;
-                                    _bug.LastTime = duration;
-                                    if (duration > Quantum)
-                                    {
-                                        _bug.Overage += (duration - Quantum);
-                                    }
-                                    else if (_bug.Overage > 0 && !skippedTurn)
-                                    {
-                                        // If the animal ran under time, subtract this off of
-                                        // their overage
-                                        _bug.Overage -= (Quantum - duration);
-                                        if (_bug.Overage < 0)
-                                        {
-                                            _bug.Overage = 0;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    _bug.LastTime = duration;
-                                    _bug.Overage = 0;
-                                }
-
-                                _bug.TotalActivations++;
+                                bug.LastTime = duration;
+                                bug.Overage = 0;
                             }
+
+                            bug.TotalActivations++;
                         }
 
                         if (_totalActivations > _lastReport + ReportInterval)
@@ -778,61 +796,28 @@ namespace Terrarium.Hosting
                 }
 
                 // Tell the UI thread we are done with this animal
-                _animalReady.Reset();
-                _animalDone.Set();
-            }
-        }
-
-        private void startTimer()
-        {
-            if (_threadTimer != null)
-                throw new InvalidOperationException("Thread Timer already exists");
-
-            _threadTimer = new Timer(AbortThread, null, 1000, Timeout.Infinite);
-        }
-
-        private void cancelTimer()
-        {
-            if (_threadTimer == null) return;
-            _timerStoppedTime = DateTime.Now;
-            _threadTimer.Dispose();
-            _threadTimer = null;
-        }
-
-        // This routine gets called by the _threadTimer timer when a certain
-        // amount of time has elapsed.  If it fires, it means an animal has taken
-        // way too long to execute and we should ThreadAbort the thread the 
-        // animals run on to try to regain control of the game.
-        public void AbortThread(object arg)
-        {
-            // Wait until the main thread is in a safe place to allow the abort
-            lock (_monitor)
-            {
-                // See note on cancelTimer for why we need to check e.SignalTime > timerStoppedTime
-                if (!PenalizeForTime || DateTime.Now <= _timerStoppedTime || !_safeToAbort) return;
-                // If any other timers fire, they should not abort again until the activationThread says it's safe
-                // again.  We only want one abort per "safe time".  Set safeToAbort to false to ensure this.
-                _safeToAbort = false;
-                _activationThread.Abort();
+                worker.Ready.Reset();
+                worker.Done.Set();
             }
         }
 
         /// <summary>
         /// Determines how much actual kernel and user time this thread has actually gotten
         /// </summary>
+        /// <param name="worker">The worker whose thread is measured.</param>
         /// <param name="kernel"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        private bool getAnimalThreadTime(out Int64 kernel, out Int64 user)
+        private static bool getAnimalThreadTime(ActivationWorker worker, out Int64 kernel, out Int64 user)
         {
-            if (_threadHandleValid)
+            if (worker.ThreadHandleValid)
             {
                 var c = new FILETIME();
                 var e = new FILETIME();
                 var kernelFileTime = new FILETIME();
                 var userFileTime = new FILETIME();
 
-                var success = (GetThreadTimes(_threadHandle, ref c, ref e, ref kernelFileTime, ref userFileTime) > 0);
+                var success = (GetThreadTimes(worker.ThreadHandle, ref c, ref e, ref kernelFileTime, ref userFileTime) > 0);
                 if (success)
                 {
                     kernel = (((Int64) kernelFileTime.dwHighDateTime) << 32) + kernelFileTime.dwLowDateTime;
