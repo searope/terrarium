@@ -1,0 +1,23 @@
+<Project>
+  <!-- Settings for creature projects (Samples and SDK exercises).  The game's
+       projects use Client/Directory.Build.props instead. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Every creature builds into creatures/, ready for the game's Introduce Animal button -->
+    <OutputPath>$(MSBuildThisFileDirectory)creatures\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <!-- Samples keep their attributes in Properties/AssemblyInfo.cs -->
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs')">
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Creatures run against the game's OrganismBase, so it isn't copied next to them -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Client\OrganismBase\OrganismBase.csproj" Private="false" />
+  </ItemGroup>
+</Project>

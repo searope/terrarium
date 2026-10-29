@@ -19,6 +19,15 @@
 
   <ItemGroup>
     <!-- Creature sources compiled by the tests -->
-    <None Include="../../Samples/**/*.cs" Link="Creatures/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Samples/**/*.cs" Exclude="../../Samples/**/obj/**" Link="Creatures/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The creature projects build into creatures/; the tests introduce those assemblies -->
+    <ProjectReference Include="../../Samples/**/*.csproj;../../SDK/Solutions/CS/**/*.csproj" ReferenceOutputAssembly="false" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>CreaturesFolder</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../creatures'))</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

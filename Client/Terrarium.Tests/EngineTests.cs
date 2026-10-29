@@ -88,6 +88,27 @@ namespace Terrarium.Tests
         }
 
         [TestMethod]
+        [DataRow("Herbivore")]
+        [DataRow("Carnivore")]
+        [DataRow("Plant")]
+        [DataRow("Exercise1")]
+        [DataRow("Exercise2")]
+        [DataRow("Exercise3")]
+        public void BuiltCreatureIsIntroducedAndRuns(string name)
+        {
+            // The assemblies the creature projects built, as a player would introduce them
+            var folder = typeof (EngineTests).Assembly.GetCustomAttributes(typeof (System.Reflection.AssemblyMetadataAttribute), false)
+                .Cast<System.Reflection.AssemblyMetadataAttribute>()
+                .Single(a => a.Key == "CreaturesFolder").Value;
+
+            GameEngine.NewTerrariumGame(_directory, SavePath);
+            var species = GameEngine.Current.AddNewOrganism(Path.Combine(folder, name + ".dll"), Point.Empty, false);
+            RunTicks(20);
+
+            Assert.IsTrue(Organisms().Any(o => ((Species) o.Species).Name == species.Name), name + " should be alive");
+        }
+
+        [TestMethod]
         public void OrdinaryCreatureCodeIsAllowed()
         {
             // Lambdas, LINQ, collections, string interpolation and array
